@@ -23,8 +23,8 @@ void printMenu()
     printf("\n\nChess Multiplayer\n");
     printf("-------------------------------------\n");
     printf("    1. Login\n");
-    printf("    2. ...\n");
-    printf("    3. ...\n");
+    printf("    2. List player\n");
+    printf("    3. Connect player\n");
     printf("    4. ...\n");
     printf("    5. ...\n");
     printf("Your choice (1-5, other to quit): ");
@@ -163,6 +163,30 @@ int main()
                 close(client_sock);
                 return 0;
             }
+            break;
+
+        case 2:
+            /// list all player
+            ms.command = 204;
+            sprintf(buff, "%d", ms.command);
+            bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+            if(bytes_sent == -1) {
+                printf("\nError! Cannot send data to sever!\n");
+                close(client_sock);
+                return 1;
+            }
+
+            bytes_received = recv(client_sock,buff,1024,0);
+            if(bytes_received == -1) {
+                printf("\nError! Cannot receive data from sever!\n");
+                close(client_sock);
+                return 1;
+            }
+            printf("List player:\n%s", buff);
+
+            break;
+
+
         }
     } while(choice>=1&&choice<=5);
 
