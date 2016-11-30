@@ -1,6 +1,8 @@
 #include <stdio.h>
-#include <string.h>   //strlen
+#include <string.h>
 #include <stdlib.h>
+#include <time.h>
+
 #include <errno.h>
 #include <unistd.h>   //close
 #include <arpa/inet.h>    //close
@@ -14,6 +16,11 @@
 #define TRUE   1
 #define FALSE  0
 #define PORT 5550
+
+typedef struct message {
+    int command;
+    char message[1024];
+} message;
 
 void myFlush()
 {
@@ -49,6 +56,21 @@ node* FindNodeOnUsername(node **top, char buff[])
     return tmp;
 }
 
+message ParseMessage(char recv_data[])
+{
+    /// parse command and command content
+    message ms;
+    char tmp[3];
+
+    strncpy(tmp, recv_data, 3);
+    tmp[3] = '\0';
+    ms.command = atoi(tmp);
+
+    strncpy(ms.message, &recv_data[6], sizeof(ms.message));
+
+    return ms;
+}
+
 int main()
 {
     node*       top = NULL;
@@ -66,10 +88,13 @@ int main()
     struct sockaddr_in address;
     char *buffer;
     int bytes_sent,bytes_received;
-    char recv_data[1024];
+    char buff[1024];
     int sin_size;
+    message ms;
 
     fd_set readfds;
+
+    int challenge;
 
     // get users info
     FILE *input = fopen("users","r");
@@ -176,45 +201,92 @@ int main()
             sd = client_sock[i];
 
             if (FD_ISSET( sd, &readfds)) {
-                bytes_received = recv(sd,recv_data,1024,0);
+                bytes_received = recv(sd,buff,1024,0);
                 if (bytes_received < 0) {
                     printf("Error! Can not receive data from client!\n");
                     close(sd);
                     exit(-1);
                 }
-                recv_data[bytes_received] = '\0';
+                printf("Received message from client on socket %d \n", sd);
+                puts(buff);
 
-                printf("received message from client on socket %d \n", sd);
-                puts(recv_data);
+                ms = ParseMessage(buff);
 
-                /// parse command and command content
-                char str_command_code[3];
-                int command_code;
-                char command_content[40];
-
-                strncpy(str_command_code, recv_data, 3);
-                str_command_code[3] = '\0';
-                command_code = atoi(str_command_code);
-
-                strncpy(command_content, &recv_data[6], sizeof(recv_data)-6);
-                command_content[sizeof(recv_data)-6] = '\0';
-
-                printf("%d\n",command_code);
-                puts(command_content);
-
-                switch (command_code) {
+                switch (ms.command) {
                 /// Login
+                case 100:
                 case 101:
+                case 102:
                     /// recv username
+                    printf("Input - Command: %d ~ Message: %s\n", ms.command, ms.message);
+                    user = FindNodeOnUsername(&top, ms.message);
+                    if(user==NULL) {
+                        ms.command++;
+                        sprintf(buff, "%d", ms.command);
+                        bytes_sent = send(sd,buff,sizeof(buff),0);
+                        if (bytes_sent < 0) {
+                            printf("Error! Can not sent data to socket %d \n", sd);
+                            close(sd);
+                            client_sock[i] = 0;
+                            break;
+                        }
+                        printf("Output - Command: %d\n", ms.command);
+                    } else {
+                        // send challenge to user
+                        ms.command = 104;
+                        srand(time(NULL));
+                        int r = rand() % 20;
+                        challenge = r;
+                        printf("Output - Command: %d ~ Message: %d\n", ms.command, r);
+                        sprintf(buff,"%d ~ %d",ms.command,challenge);
+                        bytes_sent = send(sd,buff,sizeof(buff),0);
+                        if (bytes_sent < 0) {
+                            printf("Error! Can not sent data to socket %d \n", sd);
+                            close(sd);
+                            client_sock[i] = 0;
+                            break;
+                        }
+                    }
                     break;
-                case 104:
-                    /// send challenge
+                case 103:
+                    printf("User tried login more than 3 times. Closing!\n");
+                    close(sd);
+                    client_sock[i] = 0;
                     break;
                 case 105:
-                    /// send response
-                    break;
+                /// client send response
                 case 106:
-                    /// recv response
+                    /// server recv response
+                    printf("Hashed-challenge from user: %s\n",ms.message);
+
+                    int response = atoi(ms.message);
+                    int pass = user->element.pass;
+                    int hashed_challenge = 0;
+                    hashed_challenge += pass + challenge;
+                    printf("Hashed-challenge from db: %d\n", hashed_challenge);
+                    if(hashed_challenge == response) {
+                        ms.command = 107;
+                        printf("User authenticated! Exiting!\n");
+                        sprintf(buff,"%d",ms.command);
+                        bytes_sent = send(sd,buff,sizeof(buff),0);
+                        if (bytes_sent < 0) {
+                            printf("Error! Can not sent data to client!\n");
+                            close(sd);
+                            client_sock[i] = 0;
+                            break;
+                        }
+
+                    } else {
+                        ms.command = 108;
+                        printf("Password not match! Exiting!\n");
+                        sprintf(buff,"%d",ms.command);
+                        bytes_sent = send(sd,buff,sizeof(buff),0);
+                        if (bytes_sent < 0) {
+                            printf("Error! Can not sent data to client!\n");
+                            close(sd);
+                            client_sock[i] = 0;
+                        }
+                    }
                     break;
 
                 /// Lobby
@@ -247,7 +319,9 @@ int main()
                     client_sock[i]=0;
                     break;
                 default:
-                    printf("Unrecognized code: %d", command_code);
+                    printf("Unrecognized code: %d\n", ms.command);
+                    close(sd);
+                    client_sock[i]=0;
                     break;
                 }
             }

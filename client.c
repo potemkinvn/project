@@ -1,10 +1,16 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 
 #include <string.h>
+
+typedef struct message {
+    int command;
+    char message[1024];
+} message;
 
 void myFlush()
 {
@@ -24,6 +30,20 @@ void printMenu()
     printf("Your choice (1-5, other to quit): ");
 }
 
+message ParseMessage(char recv_data[])
+{
+    /// parse command and command content
+    message ms;
+    char tmp[3];
+
+    strncpy(tmp, recv_data, 3);
+    tmp[3] = '\0';
+    ms.command = atoi(tmp);
+
+    strncpy(ms.message, &recv_data[6], sizeof(ms.message));
+
+    return ms;
+}
 
 int main()
 {
@@ -33,11 +53,12 @@ int main()
     int bytes_sent,bytes_received;
 
     int total_bytes_sent = 0;
-    char tmp[50];
+    char name[50];
     char pass[30];
     char * buffer;
     int command_code, choice,i;
     client_sock=socket(AF_INET,SOCK_STREAM,0);
+    message ms;
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(5550);
@@ -48,7 +69,7 @@ int main()
         return 0;
     }
 
-    // 1. Receive server welcome
+    // Receive server welcome
     bytes_received = recv(client_sock,buff,1024,0);
     if(bytes_received == -1) {
         printf("\nError!Cannot receive data from sever!\n");
@@ -62,11 +83,13 @@ int main()
         scanf("%d",&choice);
         switch (choice) {
         case 1:
-            command_code = 100;
-            // 2. Send server user name
-            while(command_code != 200) {
+            ms.command = 100;
+            // 1. Send server user name
+            while(command_code != 104) {
+                memset(buff,'\0',(strlen(buff)+1));
                 printf("Username: ");
-                scanf("%s",buff);
+                scanf("%s",name);
+                sprintf(buff, "%d ~ %s", ms.command, name);
                 bytes_sent = send(client_sock, buff, sizeof(buff), 0);
                 if(bytes_sent == -1) {
                     printf("\nError! Cannot send data to sever!\n");
@@ -80,38 +103,30 @@ int main()
                     close(client_sock);
                     return 1;
                 }
-                command_code = atoi(buff);
-                if(command_code == 200) {
-                    printf("Username exists! Status: 200\n");
+
+                ms = ParseMessage(buff);
+                if(ms.command == 104) {
+                    printf("Username exists! Status: 104\n");
                     break;
-                } else if(command_code == 100) {
-                    printf("Username not exists! Remains attempt 3 times! Status: %d\n", command_code);
-                } else if(command_code == 101) {
-                    printf("Username not exists! Remains attempt 2 times! Status: %d\n", command_code);
-                } else if(command_code == 102) {
-                    printf("Username not exists! Remains attempt 1 times! Status: %d\n", command_code);
-                } else if(command_code == 103) {
-                    printf("Username not exists! Too many attempt! Exiting! Status: %d\n", command_code);
+                } else if(ms.command == 100) {
+                    printf("Username not exists! Remains attempt 3 times! Status: %d\n", ms.command);
+                } else if(ms.command == 101) {
+                    printf("Username not exists! Remains attempt 2 times! Status: %d\n", ms.command);
+                } else if(ms.command == 102) {
+                    printf("Username not exists! Remains attempt 1 times! Status: %d\n", ms.command);
+                } else if(ms.command == 103) {
+                    printf("Username not exists! Too many attempt! Exiting! Status: %d\n", ms.command);
                     close(client_sock);
                     return 1;
                 }
             }
 
-            // 3. Receive challenge message from server
-            if(command_code != 200) {
-                close(client_sock);
-                return 1;
-            }
-            bytes_received = recv(client_sock,buff,1024,0);
-            if(bytes_received == -1) {
-                printf("\nError! Cannot receive data from sever!\n");
-                close(client_sock);
-                return 1;
-            }
-            int challenge = atoi(buff);
+            // 2. Receive challenge message from server
+            int challenge = atoi(ms.message);
             printf("Server challenge: %d\n", challenge);
 
-            // 4. Send user hashed-challenge
+            // 3. Send user hashed-challenge
+            ms.command = 105;
             printf("Password: ");
             scanf("%s", pass);
             // calculate hashed-challenge
@@ -122,7 +137,7 @@ int main()
             //printf("Pass: %d\n",response);
             response += challenge;
             printf("Hashed-challenge: %d\n", response);
-            sprintf(buff,"%d",response);
+            sprintf(buff, "%d ~ %d", ms.command, response);
             bytes_sent = send(client_sock, buff, sizeof(buff), 0);
             if(bytes_sent == -1) {
                 printf("\nError! Cannot send data to sever!\n");
@@ -137,14 +152,14 @@ int main()
                 close(client_sock);
                 return 1;
             }
-            command_code = atoi(buff);
-            if(command_code == 300) {
+            ms = ParseMessage(buff);
+            if(ms.command == 107) {
                 printf("User authenticated! Exiting!\n");
-            } else if(command_code == 400) {
+            } else if(ms.command == 109) {
                 printf("Password not match! Exiting!\n");
             }
 
-            if(command_code == 309) {
+            if(ms.command == 400) {
                 close(client_sock);
                 return 0;
             }
