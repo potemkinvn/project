@@ -105,8 +105,7 @@ int main()
                 }
 
                 ms = ParseMessage(buff);
-                if(ms.command == 104) {
-                    printf("Username exists! Status: 104\n");
+                if(ms.command == 104 || ms.command == 107) {
                     break;
                 } else if(ms.command == 100) {
                     printf("Username not exists! Remains attempt 3 times! Status: %d\n", ms.command);
@@ -119,6 +118,13 @@ int main()
                     close(client_sock);
                     return 1;
                 }
+            }
+
+            if(ms.command == 104){
+                printf("Username exists! Status: 104\n");
+            }else if(ms.command == 107){
+                printf("%s", ms.message);
+                break;
             }
 
             // 2. Receive challenge message from server

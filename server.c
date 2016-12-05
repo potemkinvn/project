@@ -31,6 +31,16 @@ typedef struct player {
     int     isLogged; // 0: not logged, 1: logged
 } playerType;
 
+void ResetPlayer(playerType pl)
+{
+    strcpy(pl.username, "");
+    pl.sockdes = 0;
+    pl.challenge = -9999;
+    pl.isAvailable = 0;
+    pl.opponent = NULL;
+    pl.isLogged = 0;
+}
+
 void myFlush()
 {
     int ch;
@@ -147,12 +157,14 @@ int main()
     GetUserInfo(input,&top);
     fclose(input);
 
+    /// Init default value for player array
     for (i = 0; i < max_clients; i++) {
         player[i].sockdes = 0;
         strcpy(player[i].username, "");
         player[i].challenge = -9999;
         player[i].isAvailable = 0;
         player[i].opponent = NULL;
+        player[i].isLogged = 0;
     }
 
     if( (listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -247,12 +259,13 @@ int main()
 
             if (FD_ISSET( sd, &readfds)) {
                 bytes_received = recv(sd,buff,1024,0);
-                if (bytes_received < 0) {
-                    printf("Error! Can not receive data from client!\n");
+                if (bytes_received <= 0) {
+                    printf("Error! Can not receive data from socket %d \n", sd);
                     close(sd);
-                    exit(-1);
+                    ResetPlayer(player[i]);
+                    break;
                 }
-                printf("Received message from client on socket %d \n", sd);
+                printf("\nReceived message from client on socket %d: %s\n", sd, buff);
 
                 ms = ParseMessage(buff);
 
@@ -263,31 +276,49 @@ int main()
                 case 102:
                     /// recv username
                     printf("Input - Command: %d ~ Message: %s\n", ms.command, ms.message);
+
+                    // check if this user already logged?
+                    if(player[i].isLogged){
+                        printf("Output - Command: %d ~ Message: You are already logged in as '%s'!\n", 107, player[i].username);
+                        sprintf(buff,"%d ~ You are already logged in as '%s'!",107, player[i].username);
+                        bytes_sent = send(sd,buff,sizeof(buff),0);
+                        if (bytes_sent <= 0) {
+                            printf("Error! Can not sent data to client!\n");
+                            close(sd);
+                            ResetPlayer(player[i]);
+                            break;
+                        }
+                        break;
+                    }
+
                     user = FindNodeOnUsername(&top, ms.message);
                     if(user==NULL) {
                         ms.command++;
                         sprintf(buff, "%d", ms.command);
                         bytes_sent = send(sd,buff,sizeof(buff),0);
-                        if (bytes_sent < 0) {
+                        if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to socket %d \n", sd);
                             close(sd);
-                            player[i].sockdes = 0;
+                            ResetPlayer(player[i]);
                             break;
                         }
                         printf("Output - Command: %d\n", ms.command);
                     } else {
+                        strcpy(player[i].username, user->element.name);
+
                         // send challenge to user
                         ms.command = 104;
                         srand(time(NULL));
                         int r = rand() % 20;
-                        challenge = r;
-                        printf("Output - Command: %d ~ Message: %d\n", ms.command, r);
-                        sprintf(buff,"%d ~ %d",ms.command,challenge);
+                        player[i].challenge = r;
+
+                        printf("Output - Command: %d ~ Message: %d\n", ms.command, player[i].challenge);
+                        sprintf(buff,"%d ~ %d",ms.command, player[i].challenge);
                         bytes_sent = send(sd,buff,sizeof(buff),0);
-                        if (bytes_sent < 0) {
+                        if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to socket %d \n", sd);
                             close(sd);
-                            player[i].sockdes = 0;
+                            ResetPlayer(player[i]);
                             break;
                         }
                     }
@@ -295,7 +326,7 @@ int main()
                 case 103:
                     printf("User tried login more than 3 times. Closing!\n");
                     close(sd);
-                    player[i].sockdes = 0;
+                    ResetPlayer(player[i]);
                     break;
                 case 105:
                 /// client send response
@@ -304,21 +335,23 @@ int main()
                     printf("Hashed-challenge from user: %s\n",ms.message);
 
                     int response = atoi(ms.message);
+                    user = FindNodeOnUsername(&top, player[i].username);
                     int pass = user->element.pass;
                     int hashed_challenge = 0;
-                    hashed_challenge += pass + challenge;
+                    hashed_challenge += pass + player[i].challenge;
                     printf("Hashed-challenge from db: %d\n", hashed_challenge);
                     if(hashed_challenge == response) {
                         ms.command = 107;
-                        printf("User authenticated! Exiting!\n");
+                        printf("User authenticated!\n");
                         player[i].isAvailable = 1;
+                        player[i].isLogged = 1;
                         strcpy(player[i].username, user->element.name);
                         sprintf(buff,"%d",ms.command);
                         bytes_sent = send(sd,buff,sizeof(buff),0);
-                        if (bytes_sent < 0) {
+                        if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to client!\n");
                             close(sd);
-                            player[i].sockdes = 0;
+                            ResetPlayer(player[i]);
                             break;
                         }
 
@@ -327,10 +360,10 @@ int main()
                         printf("Password not match! Exiting!\n");
                         sprintf(buff,"%d",ms.command);
                         bytes_sent = send(sd,buff,sizeof(buff),0);
-                        if (bytes_sent < 0) {
+                        if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to client!\n");
                             close(sd);
-                            player[i].sockdes = 0;
+                            ResetPlayer(player[i]);
                         }
                     }
                     break;
@@ -362,10 +395,10 @@ int main()
                         strcat(buff, tmp);
                     }
                     bytes_sent = send(sd,buff,sizeof(buff),0);
-                    if (bytes_sent < 0) {
+                    if (bytes_sent <= 0) {
                         printf("Error! Can not sent data to client!\n");
                         close(sd);
-                        player[i].sockdes = 0;
+                        ResetPlayer(player[i]);
                         break;
                     }
 
@@ -385,12 +418,12 @@ int main()
                 case 309:
                     /// quit signal
                     close(sd);
-                    player[i].sockdes = 0;
+                    ResetPlayer(player[i]);
                     break;
                 default:
                     printf("Unrecognized code: %d\n", ms.command);
                     close(sd);
-                    player[i].sockdes = 0;
+                    ResetPlayer(player[i]);
                     break;
                 }
             }
