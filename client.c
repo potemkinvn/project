@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <string.h>
 
@@ -20,12 +21,12 @@ void myFlush()
 
 void printMenu()
 {
-    printf("\n\nChess Multiplayer\n");
+    printf("\nChess Multiplayer\n");
     printf("-------------------------------------\n");
     printf("    1. Login\n");
     printf("    2. List player\n");
-    printf("    3. Connect player\n");
-    printf("    4. ...\n");
+    printf("    3. Send invite to player\n");
+    printf("    4. Listen for incoming connection\n");
     printf("    5. ...\n");
     printf("Your choice (1-5, other to quit): ");
 }
@@ -45,6 +46,11 @@ message ParseMessage(char recv_data[])
     return ms;
 }
 
+void ListPlayer(int client_sock)
+{
+
+}
+
 int main()
 {
     int client_sock;
@@ -52,11 +58,9 @@ int main()
     struct sockaddr_in server_addr;
     int bytes_sent,bytes_received;
 
-    int total_bytes_sent = 0;
     char name[50];
     char pass[30];
-    char * buffer;
-    int command_code, choice,i;
+    int choice,i;
     client_sock=socket(AF_INET,SOCK_STREAM,0);
     message ms;
 
@@ -85,20 +89,20 @@ int main()
         case 1:
             ms.command = 100;
             // 1. Send server user name
-            while(command_code != 104) {
+            while(ms.command != 104) {
                 memset(buff,'\0',(strlen(buff)+1));
                 printf("Username: ");
                 scanf("%s",name);
                 sprintf(buff, "%d ~ %s", ms.command, name);
                 bytes_sent = send(client_sock, buff, sizeof(buff), 0);
-                if(bytes_sent == -1) {
+                if(bytes_sent <= 0) {
                     printf("\nError! Cannot send data to sever!\n");
                     close(client_sock);
                     return 1;
                 }
 
                 bytes_received = recv(client_sock, buff, sizeof(buff),0);
-                if(bytes_received == -1) {
+                if(bytes_received <= 0) {
                     printf("\nError! Cannot receive data from server!\n");
                     close(client_sock);
                     return 1;
@@ -108,21 +112,21 @@ int main()
                 if(ms.command == 104 || ms.command == 107) {
                     break;
                 } else if(ms.command == 100) {
-                    printf("Username not exists! Remains attempt 3 times! Status: %d\n", ms.command);
+                    printf("%s Remains attempt 3 times! Status: %d\n", ms.message, ms.command);
                 } else if(ms.command == 101) {
-                    printf("Username not exists! Remains attempt 2 times! Status: %d\n", ms.command);
+                    printf("%s Remains attempt 2 times! Status: %d\n", ms.message, ms.command);
                 } else if(ms.command == 102) {
-                    printf("Username not exists! Remains attempt 1 times! Status: %d\n", ms.command);
+                    printf("%s Remains attempt 1 times! Status: %d\n", ms.message, ms.command);
                 } else if(ms.command == 103) {
-                    printf("Username not exists! Too many attempt! Exiting! Status: %d\n", ms.command);
+                    printf("%s Too many attempt! Exiting! Status: %d\n", ms.message, ms.command);
                     close(client_sock);
                     return 1;
                 }
             }
 
-            if(ms.command == 104){
+            if(ms.command == 104) {
                 printf("Username exists! Status: 104\n");
-            }else if(ms.command == 107){
+            } else if(ms.command == 107) {
                 printf("%s", ms.message);
                 break;
             }
@@ -145,7 +149,7 @@ int main()
             printf("Hashed-challenge: %d\n", response);
             sprintf(buff, "%d ~ %d", ms.command, response);
             bytes_sent = send(client_sock, buff, sizeof(buff), 0);
-            if(bytes_sent == -1) {
+            if(bytes_sent <= 0) {
                 printf("\nError! Cannot send data to sever!\n");
                 close(client_sock);
                 return 1;
@@ -153,14 +157,14 @@ int main()
 
             // 5. Did password match
             bytes_received = recv(client_sock,buff,1024,0);
-            if(bytes_received == -1) {
+            if(bytes_received <= 0) {
                 printf("\nError! Cannot receive data from sever!\n");
                 close(client_sock);
                 return 1;
             }
             ms = ParseMessage(buff);
             if(ms.command == 107) {
-                printf("User authenticated! Exiting!\n");
+                printf("User authenticated!\n");
             } else if(ms.command == 109) {
                 printf("Password not match! Exiting!\n");
             }
@@ -173,26 +177,132 @@ int main()
 
         case 2:
             /// list all player
-            ms.command = 204;
-            sprintf(buff, "%d", ms.command);
+            sprintf(buff, "%d", 207);
             bytes_sent = send(client_sock, buff, sizeof(buff), 0);
-            if(bytes_sent == -1) {
+            if(bytes_sent <= 0) {
                 printf("\nError! Cannot send data to sever!\n");
                 close(client_sock);
                 return 1;
             }
 
             bytes_received = recv(client_sock,buff,1024,0);
-            if(bytes_received == -1) {
+            if(strcmp(buff, "") == 0) {
+                printf("None user available currently!\n");
+            } else {
+                if(bytes_received <= 0) {
+                    printf("\nError! Cannot receive data from sever!\n");
+                    close(client_sock);
+                    return 1;
+                }
+                printf("List player:\n%s", buff);
+            }
+            break;
+        case 3: {
+            /// A send invite to playerB's name: 200 ~ [B's name]
+            ms.command = 200;
+            printf("Enter player name you want to connect: ");
+            scanf("%s", name);
+            sprintf(buff, "%d ~ %s", ms.command, name);
+            bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+            if(bytes_sent <= 0) {
+                printf("\nError! Cannot send data to sever!\n");
+                close(client_sock);
+                return 1;
+            }
+
+            // wait for result: acceptance from player B or failed
+            bytes_received = recv(client_sock,buff,1024,0);
+            if(bytes_received <= 0) {
                 printf("\nError! Cannot receive data from sever!\n");
                 close(client_sock);
                 return 1;
             }
-            printf("List player:\n%s", buff);
+            ms = ParseMessage(buff);
+
+            if(ms.command == 205) {
+                /// B refuse to play or B disconnected: 205 ~ [B's name]
+                printf("Player %s refused to play or disconnected. (2/3)\n", ms.message);
+            } else if(ms.command == 203) {
+                /// B accept to play: 203 ~ [B's name]
+                /// send B ready (ack) status: 206 ~ [B's name]
+                ms.command = 206;
+                printf("Player %s accepted to play. (2/3)\n", ms.message);
+                printf("Sending back ready status. (3/3)\n");
+                sprintf(buff, "%d ~ %s", ms.command, ms.message);
+                bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+                if(bytes_sent <= 0) {
+                    printf("\nError! Cannot send data to sever!\n");
+                    close(client_sock);
+                    return 1;
+                }
+            }
 
             break;
+        }
+        case 4:
+            /// B send listening status
+            ms.command = 208;
+            sprintf(buff, "%d", ms.command);
+            printf("Listening for incoming connection ...\n");
+            bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+            if(bytes_sent <= 0) {
+                printf("\nError! Cannot send data to sever!\n");
+                close(client_sock);
+                return 1;
+            }
+
+            // get forwarded player A request from server: 201 ~ [A's name]
+            bytes_received = recv(client_sock,buff,1024,0);
+            if(bytes_received <= 0) {
+                printf("\nError! Cannot receive data from sever!\n");
+                close(client_sock);
+                return 1;
+            }
+            ms = ParseMessage(buff);
+            if(ms.command == 201) {
+                char result;
+                printf("(1/3) Player %s invite you to play. Accept? (y/n): ", ms.message);
+                myFlush();
+                scanf("%c", &result);
+                if(result == 'n') {
+                    ms.command = 204;
+                    // send refuse to A: 204 ~ [A's name]
+                    sprintf(buff, "%d ~ %s", ms.command, ms.message);
+                    bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+                    if(bytes_sent <= 0) {
+                        printf("\nError! Cannot send data to sever!\n");
+                        close(client_sock);
+                        return 1;
+                    }
+                    break;
+                } else if(result == 'y') {
+                    ms.command = 202;
+                    // send accept to A: 202 ~ [A's name]
+                    sprintf(buff, "%d ~ %s", ms.command, ms.message);
+                    bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+                    if(bytes_sent <= 0) {
+                        printf("\nError! Cannot send data to sever!\n");
+                        close(client_sock);
+                        return 1;
+                    }
+                }
+            }
+
+            /// wait for ready (ack) status from A
+            bytes_received = recv(client_sock,buff,1024,0);
+            if(bytes_received <= 0) {
+                printf("\nError! Cannot receive data from sever!\n");
+                close(client_sock);
+                return 1;
+            }
+            ms = ParseMessage(buff);
+            if(ms.command == 206) {
+                /// received ready (ack) status from A: 206 ~ [A's name]
+                printf("(3/3) Player %s ready.\n", ms.message);
+            }
 
 
+            break;
         }
     } while(choice>=1&&choice<=5);
 

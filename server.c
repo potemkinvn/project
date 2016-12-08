@@ -1,3 +1,9 @@
+// truongnm 309 (123456)
+// dungta 444 (123abc)
+// 1 49 (1)
+// 2 49 (1)
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,16 +35,18 @@ typedef struct player {
     int     challenge;
     int     isAvailable; // 0: busy; 1: available
     int     isLogged; // 0: not logged, 1: logged
+    int     isWaiting;
 } playerType;
 
-void ResetPlayer(playerType pl)
+void ResetPlayer(playerType *pl)
 {
-    strcpy(pl.username, "");
-    pl.sockdes = 0;
-    pl.challenge = -9999;
-    pl.isAvailable = 0;
-    pl.opponent = NULL;
-    pl.isLogged = 0;
+    strcpy(pl->username, "");
+    pl->sockdes = 0;
+    pl->challenge = -9999;
+    pl->isAvailable = 0;
+    pl->opponent = NULL;
+    pl->isLogged = 0;
+    pl->isWaiting = 0;
 }
 
 void myFlush()
@@ -90,37 +98,60 @@ message ParseMessage(char recv_data[])
     return ms;
 }
 
-playerType FindPlayerOnUsername(char username[], playerType player[])
+playerType FindPlayerWaitingOnUsername(char username[], playerType player[30])
 {
     playerType not_exist_player;
     not_exist_player.sockdes = -9999;
     int i;
     for(i=0; i<30; i++) {
-        if(strcmp(username,player[i].username) && (player[i].isAvailable == 1) ) {
+        if(strcmp(username,player[i].username)==0 && (player[i].isWaiting == 1) ) {
             return player[i];
         }
     }
     return not_exist_player;
 }
 
+playerType FindPlayerOnUsername(char username[], playerType player[30])
+{
+    playerType not_exist_player;
+    not_exist_player.sockdes = -9999;
+    int i;
+    for(i=0; i<30; i++) {
+        if(strcmp(username,player[i].username)==0) {
+            return player[i];
+        }
+    }
+    return not_exist_player;
+}
+
+int GetPlayerIndexOnUsername(char username[], playerType player[30])
+{
+    int i;
+    for(i=0; i<30; i++) {
+        if(strcmp(username,player[i].username)==0) {
+            return i;
+        }
+    }
+    return -9999;
+}
 void PrintPlayerType(playerType player)
 {
-    printf("Username: %s, sockdes: %d, opponent: %d, challenge: %d, status: %d",\
+    printf("Username: %s, sockdes: %d, opponent: %p, challenge: %d, status: %d",\
            player.username, player.sockdes, player.opponent, player.challenge, player.isAvailable);
 }
 
-char ListAllPlayersInUsernameAndStatus(playerType player[])
-{
-    int i = 0;
-    char result[1000];
-    char tmp[100];
-    for(i = 0; i<30; i++) {
-        sprintf(tmp,"%s %d\n", player[i].username, player[i].isAvailable);
-        strcat(result, tmp);
-    }
-    printf("%s",result);
-    return result;
-}
+//char ListAllPlayersInUsernameAndStatus(playerType player[])
+//{
+//    int i = 0;
+//    char result[1000];
+//    char tmp[100];
+//    for(i = 0; i<30; i++) {
+//        sprintf(tmp,"%s %d\n", player[i].username, player[i].isAvailable);
+//        strcat(result, tmp);
+//    }
+//    printf("%s",result);
+//    return result;
+//}
 
 int main()
 {
@@ -130,7 +161,6 @@ int main()
     int listen_sock;
     int addrlen;
     int new_sock;
-    int client_sock[30];
     playerType player[30];
     int max_clients = 30;
     int activity;
@@ -138,15 +168,11 @@ int main()
     int sd;
     int max_sd;
     struct sockaddr_in address;
-    char *buffer;
     int bytes_sent,bytes_received;
     char buff[1024];
-    int sin_size;
     message ms;
 
     fd_set readfds;
-
-    int challenge;
 
     // get users info
     FILE *input = fopen("users","r");
@@ -165,6 +191,7 @@ int main()
         player[i].isAvailable = 0;
         player[i].opponent = NULL;
         player[i].isLogged = 0;
+        player[i].isWaiting = 0;
     }
 
     if( (listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -262,7 +289,7 @@ int main()
                 if (bytes_received <= 0) {
                     printf("Error! Can not receive data from socket %d \n", sd);
                     close(sd);
-                    ResetPlayer(player[i]);
+                    ResetPlayer(&player[i]);
                     break;
                 }
                 printf("\nReceived message from client on socket %d: %s\n", sd, buff);
@@ -277,29 +304,52 @@ int main()
                     /// recv username
                     printf("Input - Command: %d ~ Message: %s\n", ms.command, ms.message);
 
-                    // check if this user already logged?
-                    if(player[i].isLogged){
+                    //check if this user already logged in this session
+                    if(player[i].isLogged) {
                         printf("Output - Command: %d ~ Message: You are already logged in as '%s'!\n", 107, player[i].username);
                         sprintf(buff,"%d ~ You are already logged in as '%s'!",107, player[i].username);
                         bytes_sent = send(sd,buff,sizeof(buff),0);
                         if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to client!\n");
                             close(sd);
-                            ResetPlayer(player[i]);
+                            ResetPlayer(&player[i]);
                             break;
                         }
                         break;
                     }
 
+                    //check if this user already logged in another session
+                    int j;
+                    int hasLoggedInAnotherSession = 0;
+                    for (j = 0; j < max_clients; j++) {
+                        if( strcmp(player[j].username, ms.message) == 0 && player[j].isAvailable == 1) {
+                            hasLoggedInAnotherSession = 1;
+                            ms.command++;
+                            printf("Output - Command: %d ~ Message: This user %s already logged, another user name is required!\n", ms.command, ms.message);
+                            sprintf(buff,"%d ~ This user %s already logged, another user name is required!", ms.command, ms.message);
+                            bytes_sent = send(sd,buff,sizeof(buff),0);
+                            if (bytes_sent <= 0) {
+                                printf("Error! Can not sent data to client!\n");
+                                close(sd);
+                                ResetPlayer(&player[i]);
+                                break;
+                            }
+                            break;
+                        }
+                    }
+                    if(hasLoggedInAnotherSession)
+                        break;
+
+                    // check if this user exist in database
                     user = FindNodeOnUsername(&top, ms.message);
                     if(user==NULL) {
                         ms.command++;
-                        sprintf(buff, "%d", ms.command);
+                        sprintf(buff, "%d ~ %s", ms.command, "User not exist!");
                         bytes_sent = send(sd,buff,sizeof(buff),0);
                         if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to socket %d \n", sd);
                             close(sd);
-                            ResetPlayer(player[i]);
+                            ResetPlayer(&player[i]);
                             break;
                         }
                         printf("Output - Command: %d\n", ms.command);
@@ -318,7 +368,7 @@ int main()
                         if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to socket %d \n", sd);
                             close(sd);
-                            ResetPlayer(player[i]);
+                            ResetPlayer(&player[i]);
                             break;
                         }
                     }
@@ -326,7 +376,7 @@ int main()
                 case 103:
                     printf("User tried login more than 3 times. Closing!\n");
                     close(sd);
-                    ResetPlayer(player[i]);
+                    ResetPlayer(&player[i]);
                     break;
                 case 105:
                 /// client send response
@@ -351,7 +401,7 @@ int main()
                         if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to client!\n");
                             close(sd);
-                            ResetPlayer(player[i]);
+                            ResetPlayer(&player[i]);
                             break;
                         }
 
@@ -363,46 +413,117 @@ int main()
                         if (bytes_sent <= 0) {
                             printf("Error! Can not sent data to client!\n");
                             close(sd);
-                            ResetPlayer(player[i]);
+                            ResetPlayer(&player[i]);
                         }
                     }
                     break;
 
                 /// Lobby
                 case 200: {
-                    /// client A send request client B
+                    /// client A send request client B: 200 ~ [B's name]
                     playerType opponent;
-                    opponent = FindPlayerOnUsername(ms.message, player);
-                    PrintPlayerType(opponent);
+                    opponent = FindPlayerWaitingOnUsername(ms.message, player);
+                    //PrintPlayerType(opponent);
+                    player[i].isAvailable = 0;
+
+                    // forward request to B: 201 ~ [A's name]
+                    ms.command = 201;
+                    int sd_client_B = opponent.sockdes;
+                    sprintf(buff,"%d ~ %s",ms.command, player[i].username);
+                    bytes_sent = send(sd_client_B,buff,sizeof(buff),0);
+                    if (bytes_sent <= 0) {
+                        // B disconnected, send back to A: 205 ~ [B's name]
+                        printf("Error! Can not sent data to client!\n");
+                        close(sd_client_B);
+                        ResetPlayer(&opponent);
+
+                        ms.command = 205;
+                        sprintf(buff,"%d ~ %s",ms.command, ms.message);
+                        bytes_sent = send(sd,buff,sizeof(buff),0);
+                        if (bytes_sent <= 0) {
+                            printf("Error! Can not sent data to client!\n");
+                            close(sd);
+                            ResetPlayer(&player[i]);
+                        }
+                    }
+
                     break;
                 }
-                case 201:
-                    /// recv request
+                case 204: {
+                    /// receive B refuse A's invite: 204 ~ [A's name]
+                    /// forward it back to A: 205 ~ [B's name]
+                    ms.command = 205;
+                    player[i].isWaiting = 0;
+//                    playerType playerA;
+//                    playerA = FindPlayerOnUsername(ms.message, player);
+//                    playerA.isAvailable = 1;
+                    int playerAIndex = GetPlayerIndexOnUsername(ms.message, player);
+                    player[playerAIndex].isAvailable = 1;
+                    sprintf(buff,"%d ~ %s",ms.command, player[i].username);
+                    bytes_sent = send(player[playerAIndex].sockdes,buff,sizeof(buff),0);
+                    if (bytes_sent <= 0) {
+                        printf("Error! Can not sent data to client!\n");
+                        close(player[playerAIndex].sockdes);
+                        ResetPlayer(&player[playerAIndex]);
+                    }
+
                     break;
-                case 202:
-                    /// send accept
+                }
+                case 202: {
+                    /// receive B accept A's invite: 202 ~ [A's name]
+                    /// start 3 ways acceptance
+                    /// forward it to A: 203 ~ [B's name]
+                    ms.command = 203;
+                    int playerAIndex = GetPlayerIndexOnUsername(ms.message, player);
+                    sprintf(buff,"%d ~ %s",ms.command, player[i].username);
+                    bytes_sent = send(player[playerAIndex].sockdes,buff,sizeof(buff),0);
+                    if (bytes_sent <= 0) {
+                        printf("Error! Can not sent data to client!\n");
+                        close(player[playerAIndex].sockdes);
+                        ResetPlayer(&player[playerAIndex]);
+                    }
+
                     break;
-                case 203:
-                    /// recv accept
+                }
+                case 206: {
+                    /// receive A ready (ack) status: 206 ~ [B's name]
+                    /// forward it to B: 206 ~ [A's name]
+                    ms.command = 206;
+                    int playerBIndex = GetPlayerIndexOnUsername(ms.message, player);
+                    player[playerBIndex].isWaiting = 0;
+                    sprintf(buff,"%d ~ %s",ms.command, player[playerBIndex].username);
+                    bytes_sent = send(player[playerBIndex].sockdes,buff,sizeof(buff),0);
+                    if (bytes_sent <= 0) {
+                        printf("Error! Can not sent data to client!\n");
+                        close(player[playerBIndex].sockdes);
+                        ResetPlayer(&player[playerBIndex]);
+                    }
+
                     break;
-                case 204:
-                    /// List All Players In Username Status\n
-//                    strcpy(buff, ListAllPlayersInUsernameAndStatus(player));
+                }
+                case 207:{
+                    /// List All Available Players In Username\n
                     memset(buff,'\0',(strlen(buff)+1));
                     char tmp[100];
+                    strcpy(buff, "");
                     for(i = 0; i<30; i++) {
-                        sprintf(tmp,"%s %d\n", player[i].username, player[i].isAvailable);
-                        strcat(buff, tmp);
+                        if(player[i].isAvailable == 1) {
+                            sprintf(tmp,"%s \t", player[i].username);
+                            strcat(buff, tmp);
+                        }
                     }
                     bytes_sent = send(sd,buff,sizeof(buff),0);
                     if (bytes_sent <= 0) {
                         printf("Error! Can not sent data to client!\n");
                         close(sd);
-                        ResetPlayer(player[i]);
+                        ResetPlayer(&player[i]);
                         break;
                     }
-
-
+                    break;
+                }
+                case 208:
+                    /// recv player B listening status for 5 seconds
+                    player[i].isWaiting = 1;
                     break;
 
                 /// Game
@@ -418,12 +539,12 @@ int main()
                 case 309:
                     /// quit signal
                     close(sd);
-                    ResetPlayer(player[i]);
+                    ResetPlayer(&player[i]);
                     break;
                 default:
                     printf("Unrecognized code: %d\n", ms.command);
                     close(sd);
-                    ResetPlayer(player[i]);
+                    ResetPlayer(&player[i]);
                     break;
                 }
             }
