@@ -1,0 +1,45 @@
+# depslib dependency file v1.0
+1481537482 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client/main.c
+	"clientfunction.h"
+
+1481472280 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client/messagetype.h
+
+1481472410 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client/playertype.h
+
+1481537482 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client/clientfunction.h
+	<stdio.h>
+	<stdlib.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<sys/socket.h>
+	<sys/types.h>
+	<unistd.h>
+	<string.h>
+	"messagetype.h"
+	"playertype.h"
+
+1481537497 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client/clientfunction.c
+	"clientfunction.h"
+
+1481541107 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/main.c
+	"clientfunction.h"
+
+1481537482 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/clientfunction.h
+	<stdio.h>
+	<stdlib.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<sys/socket.h>
+	<sys/types.h>
+	<unistd.h>
+	<string.h>
+	"messagetype.h"
+	"playertype.h"
+
+1481472280 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/messagetype.h
+
+1481472410 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/playertype.h
+
+1481537497 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/clientfunction.c
+	"clientfunction.h"
+

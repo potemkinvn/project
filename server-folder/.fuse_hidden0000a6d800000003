@@ -1,0 +1,179 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <sys/wait.h>
+#include <arpa/inet.h>
+#include <ctype.h>
+#include <poll.h>
+
+#include "linkedlist.h"
+
+#define PORT 5500
+#define BACKLOG 20
+#define OPENMAX 3
+
+void GetUserInfo(FILE *input, node **top)
+{
+    int tmp;
+    elementType el;
+    char name[20];
+    char tmp2[20];
+    while(!feof(input)) {
+        tmp = fscanf(input, "%s %s\n", name, tmp2);
+        strcpy(el.name, name);
+        el.pass = atoi(tmp2);
+
+        if(tmp>0)
+            AddTop(top,el);
+    }
+}
+
+node* FindNodeOnUsername(node **top, char buff[])
+{
+    node *tmp = *top;
+    while(tmp!=NULL) {
+        if(strcmp(tmp->element.name,buff)==0)
+            return tmp;
+        else
+            tmp = tmp->pNext;
+    }
+    return tmp;
+}
+
+int main()
+{
+    node*       top = NULL;
+    node*       user = NULL;
+    struct      pollfd client[OPENMAX];
+    int         i, nready, maxi, maxfd, listenfd, connfd, sockfd, status = 100, challenge, response;
+    char        buff[1024];
+    int         bytes_sent, bytes_received;
+    struct      sockaddr_in servaddr; /* server's address information */
+    struct      sockaddr_in cliaddr; /* client's address information */
+    unsigned    int sin_size;
+    //struct      timeval tv;
+
+    //tv.tv_sec = 5;  /* 5 Secs Timeout */
+    //tv.tv_usec = 0;
+
+    // get users info
+    FILE *input = fopen("users","r");
+    if(!input) {
+        printf("Can't read users info from file.\n");
+        exit(-1);
+    }
+
+    GetUserInfo(input,&top);
+    fclose(input);
+//    PrintList(&top);
+
+    if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1 ) { /* calls socket() */
+        printf("socket() error\n");
+        exit(-1);
+    }
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(PORT);   /* Remember htons() from "Conversions" section? í¼ íº */
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);  /* INADDR_ANY puts your IP address automatically */
+
+    if(bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr))==-1) { /* calls bind() */
+        printf("bind() error\n");
+        exit(-1);
+    }
+
+    if(listen(listenfd,BACKLOG) == -1) { /* calls listen() */
+        printf("listen() error\n");
+        exit(-1);
+    }
+
+    client[0].fd = listenfd;
+    client[0].events = POLLRDNORM;
+    for(i=1; i<OPENMAX; i++)
+        client[i].fd = -1;
+    maxi = 0;
+
+    for(;;) {
+        nready = poll(client, maxi+1, 5000);
+        printf("%d",nready);
+
+        if(client[0].revents & POLLRDNORM) {
+            sin_size=sizeof(struct sockaddr_in);
+            connfd = accept(listenfd, (struct sockaddr*)&cliaddr,&sin_size);
+
+            for(i=1; i<OPENMAX; i++) {
+                if(client[i].fd < 0) {
+                    client[i].fd = connfd;
+                    break;
+                }
+            }
+            if(i==OPENMAX) {
+                printf("too many clients");
+                return 1;
+            }
+            client[i].events = POLLOUT;
+            if(i>maxi)
+                maxi=i;
+
+            printf("\n\nYou got a connection from %s\n", inet_ntoa(cliaddr.sin_addr)); /* prints client's IP */
+            char welcome[60] = "Welcome to my challenge-response server.\n";
+
+            /* 1. send to the client welcome message */
+            bytes_sent = send(connfd,welcome,sizeof(welcome),0);
+            if (bytes_sent < 0) {
+                printf("Error! Can not sent data to client!\n");
+                close(connfd);
+                client[i].fd = -1;
+            }
+            status = 100;
+
+            if(--nready <= 0)
+                continue;
+        }
+        for(i=1; i<=maxi; i++) {
+            if( (sockfd = client[i].fd) < 0)
+                continue;
+            if(client[i].revents & (POLLOUT | POLLERR)) {
+
+                bytes_received = recv(sockfd,buff,sizeof(buff),0);
+                if(bytes_received == -1) {
+                    printf("\nError! Cannot receive data from client!\n");
+                    close(sockfd);
+                    client[i].fd = -1;
+                    break;
+                }
+                buff[bytes_received] = '\0';
+                printf("Client: %s\n",buff);
+
+                char str_command_code[3];
+                int command_code;
+                char command_content[40];
+
+                strncpy(str_command_code, buff, 3);
+                str_command_code[3] = '\0';
+                command_code = atoi(str_command_code);
+
+                strncpy(command_content, &buff[6], sizeof(buff)-6);
+                command_content[sizeof(buff)-6] = '\0';
+
+                printf("%d\n",command_code);
+                puts(command_content);
+
+                // Finish authentication
+//                close(sockfd);
+                client[i].fd = -1;
+                if(--nready <= 0) {
+                    break;
+                }
+            }
+        }
+    }
+
+
+    close(listenfd);
+    return 0;
+}
