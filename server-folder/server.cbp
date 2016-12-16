@@ -39,6 +39,12 @@
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="messagetype.h" />
+		<Unit filename="playertype.h" />
+		<Unit filename="serverfunction.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="serverfunction.h" />
 		<Unit filename="users" />
 		<Extensions>
 			<code_completion />

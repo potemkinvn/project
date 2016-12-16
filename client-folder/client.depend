@@ -21,10 +21,10 @@
 1481537497 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client/clientfunction.c
 	"clientfunction.h"
 
-1481541107 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/main.c
+1481883844 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client-folder/main.c
 	"clientfunction.h"
 
-1481537482 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/clientfunction.h
+1481884115 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client-folder/clientfunction.h
 	<stdio.h>
 	<stdlib.h>
 	<netinet/in.h>
@@ -35,11 +35,17 @@
 	<string.h>
 	"messagetype.h"
 	"playertype.h"
+	"piece.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
 
-1481472280 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/messagetype.h
+1481472280 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client-folder/messagetype.h
 
-1481472410 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/playertype.h
+1481472410 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client-folder/playertype.h
 
-1481537497 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/clientfunction.c
+1481883984 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client-folder/clientfunction.c
 	"clientfunction.h"
+
+1481883833 /media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/client-folder/piece.h
 

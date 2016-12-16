@@ -12,6 +12,15 @@
 
 #include "messagetype.h"
 #include "playertype.h"
+#include "piece.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define RED "\x1b[31m"
+#define BLUE "\x1b[34m"
+#define RESET "\x1b[0m"
 
 void myFlush();
 
@@ -58,13 +67,30 @@ int getMyInvitationList();
  *
  */
 int sendInvitation();
+
 /** \brief Player B send accept to player A
  *
  * \param
  * \param
- * \return -1 if disconnected, 0 if smt failed, 1 if accepted
+ * \return -1 if disconnected, 0 if list empty, 1 if list has more than 1 user
  *
  */
 int acceptInvitation();
+
+void setup();
+void printboard();
+void Move(int a,int b,int c,int d);
+int ValidSquare(int a,int b,int c,int d);
+int CheckBlack(int *whitelist);
+int *BlackMoveList(int epa,int epb);
+int *WhiteMoveList(int epa,int epb);
+int CheckWhite(int *blacklist);
+int WhiteMove(char *cmd,int turn,int castlingcheck);
+int WhiteFaultCheck(int a,int b,int c,int d);
+int BlackMove(char *cmd,int turn,int castlingcheck);
+int BlackFaultCheck(int a,int b,int c,int d);
+int WhiteMate(int *whitelist);
+int BlackMate(int *blacklist);
+int PlayGame(int side);
 
 #endif // CLIENTFUNCTION_H_INCLUDED

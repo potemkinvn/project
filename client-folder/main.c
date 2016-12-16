@@ -12,6 +12,12 @@ int bytes_sent,bytes_received;
 message ms;
 playerType thisPlayer;
 
+piece board[8][8];
+int enpass_a=-1,enpass_b=-1;
+int epturn = 1; //en passant turn: 1~white 2~black
+const piece startup[8][8]={wrook,wknight,wbishop,wqueen,wking,wbishop,wknight,wrook,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank,blank, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, brook, bknight, bbishop, bqueen, bking, bbishop, bknight, brook};
+
+
 void printMenu()
 {
     listAllPlayerAndStatus();
@@ -64,22 +70,26 @@ int main()
             break;
 
         case 2:
-            /// send invitation
+            /// send invitation - not go first
             if(sendInvitation() == 1) {
                 printf("Game on!!!");
                 /// go to game phase
+                int side = 1;
+                PlayGame(side);
             }
             break;
         case 3: {
-            /// accept invitation
+            /// accept invitation - go first
             if(acceptInvitation() == 1) {
                 printf("Game on!!!");
                 /// go to game phase
+                int side = 0;
+                PlayGame(side);
             }
             break;
         }
         }
-    } while(choice>=1&&choice<=3);
+    } while(choice>=1&&choice<=5);
 
     close(client_sock);
     return 0;

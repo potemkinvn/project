@@ -32,9 +32,10 @@ void ResetPlayer(playerType *pl)
     pl->sockdes = 0;
     pl->challenge = -9999;
     pl->isAvailable = 0;
-    pl->opponent = NULL;
+    pl->opponentSockdes = 0;
     pl->isLogged = 0;
     pl->inviteSockdes = 0;
+    strcpy(pl->ipAddress, "");
 }
 
 void myFlush()
@@ -276,8 +277,19 @@ void SendAndProcessResponse()
 void ReceiveInvitationRequest()
 {
     int playerBIndex = GetPlayerIndexOnUsername(ms.message, player);
-    if(player[playerBIndex].sockdes == -9999 || player[playerBIndex].sockdes == player[i].sockdes) {
-        /// clientB not exist or clientA send request to clientA
+    if(playerBIndex == -9999) {
+        /// clientB not exist
+        ms.command = 209;
+        sprintf(buff,"%d ~ User not exists or you send invite to yourself.",ms.command);
+        bytes_sent = send(sd,buff,sizeof(buff),0);
+        if (bytes_sent <= 0) {
+            printf("Error! Can not sent data to client!\n");
+            close(sd);
+            ResetPlayer(&player[i]);
+        }
+        player[i].inviteSockdes = 0; // playerA end invitation process
+    } else if(player[playerBIndex].sockdes == player[i].sockdes) {
+        /// clientA send request to clientA
         ms.command = 209;
         sprintf(buff,"%d ~ User not exists or you send invite to yourself.",ms.command);
         bytes_sent = send(sd,buff,sizeof(buff),0);
@@ -305,6 +317,20 @@ void StartStep2In3WaysHandshake()
 {
     ms.command = 203;
     int playerAIndex = GetPlayerIndexOnUsername(ms.message, player);
+    int error = 0;
+    if(playerAIndex == -9999){
+        error = 1;
+    }else if(player[playerAIndex].inviteSockdes != player[i].sockdes){
+        error = 1;
+    }
+    if(error){
+        /// this playerA not exits or playerA's invitation expired, send this back to B
+        ms.command = 204;
+        sprintf(buff,"%d",ms.command);
+        bytes_sent = send(sd,buff,sizeof(buff),0);
+        return;
+    }
+
     sprintf(buff,"%d ~ %s",ms.command, player[i].username);
     bytes_sent = send(player[playerAIndex].sockdes,buff,sizeof(buff),0);
     if (bytes_sent <= 0) {
@@ -312,7 +338,7 @@ void StartStep2In3WaysHandshake()
         close(player[playerAIndex].sockdes);
         ResetPlayer(&player[playerAIndex]);
 
-        // can't forward accept to A, send this info back to B
+        /// can't forward accept to A, send this info back to B
         ms.command = 204;
         sprintf(buff,"%d",ms.command);
         bytes_sent = send(sd,buff,sizeof(buff),0);
@@ -345,6 +371,14 @@ void StartStep3In3WaysHandshake()
         close(player[playerBIndex].sockdes);
         ResetPlayer(&player[playerBIndex]);
     }
+
+    /// set those 2 players status available -> playing
+    player[i].isAvailable = 0;
+    player[playerBIndex].isAvailable = 0;
+
+    /// set those 2 players opponentSockdes
+    player[i].opponentSockdes = player[playerBIndex].sockdes;
+    player[playerBIndex].opponentSockdes = player[i].sockdes;
 }
 
 /** \brief List all players
@@ -372,7 +406,7 @@ void ListAllPlayers()
             strcat(buff, tmp);
         }
     }
-//                    printf("%s\n",buff);
+
     bytes_sent = send(sd,buff,sizeof(buff),0);
     if (bytes_sent <= 0) {
         printf("Error! Can not sent data to client!\n");
@@ -402,7 +436,7 @@ void GetInvitationList()
             strcat(buff, tmp);
         }
     }
-//                    printf("%s\n",buff);
+
     bytes_sent = send(sd,buff,sizeof(buff),0);
     if (bytes_sent <= 0) {
         printf("Error! Can not sent data to client!\n");
@@ -410,4 +444,94 @@ void GetInvitationList()
         ResetPlayer(&player[i]);
         return;
     }
+}
+
+/** \brief Receive move from playerX: 300 ~ [cordinate]. Eg: 300 ~ 0010
+ *          forward to playerY: 301 ~ [cordinate]
+ *          or if playerY disconnected, send playerX to main menu
+ * \param
+ * \param
+ * \return
+ *
+ */
+void GetMoveAndForwardMove()
+{
+    ms.command = 301;
+    int playerYIndex = player[i].opponentSockdes;
+    sprintf(buff,"%d ~ %s",ms.command, ms.message);
+    bytes_sent = send(player[playerYIndex].sockdes,buff,sizeof(buff),0);
+    if (bytes_sent <= 0) {
+        /// if playerY disconnected, reset playerY, send playerX to main menu
+        printf("Error! Can not sent data to client!\n");
+        close(player[playerYIndex].sockdes);
+        ResetPlayer(&player[playerYIndex]);
+
+        ms.command = 309;
+        sprintf(buff,"%d",ms.command);
+        bytes_sent = send(sd,buff,sizeof(buff),0);
+        if (bytes_sent <= 0) {
+            printf("Error! Can not sent data to client!\n");
+            close(sd);
+            ResetPlayer(&player[i]);
+        }
+    }
+}
+
+/** \brief Receive game result: 302
+ *
+ * \param
+ * \param
+ * \return
+ *
+ */
+void ProcessGameResult()
+{
+
+}
+
+/** \brief Game has started, init log
+ *
+ * \param
+ * \param
+ * \return
+ *
+ */
+void InitLog()
+{
+    FILE *fptrLog;
+    char filename[50] = "";
+    char timestart[10] = "";
+    int opponentSockdes = player[i].opponentSockdes;
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+
+    sprintf(timestart,"%d%d%d%d%d%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    sprintf(filename,"log_%s_%s_%s.txt",timestart, player[i].username, player[opponentSockdes].username);
+
+    if( (fptrLog=fopen(filename, "w")) == NULL) {
+        printf("Cannot open file %s.\n", filename);
+        return;
+    }
+
+    fprintf(fptrLog,"==================Chess multi-player log==================\n");
+    fprintf(fptrLog,"Time start: %s\n", timestart);
+    fprintf(fptrLog,"(Inviter - Black) Player '%s' IP: %s\n",player[i].username, player[i].ipAddress);
+    fprintf(fptrLog,"( Accept - White) Player '%s' IP: %s\n",player[opponentSockdes].username, player[opponentSockdes].ipAddress);
+//    fprintf(fptrLog,"",);
+
+
+
+
+}
+
+/** \brief Game has ended, send log to two players
+ *
+ * \param
+ * \param
+ * \return
+ *
+ */
+void SendLog()
+{
+
 }

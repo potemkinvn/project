@@ -31,10 +31,15 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="clientfunction.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="clientfunction.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="messagetype.h" />
+		<Unit filename="piece.h" />
 		<Unit filename="playertype.h" />
 		<Extensions>
 			<code_completion />

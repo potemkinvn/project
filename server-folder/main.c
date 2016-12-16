@@ -51,9 +51,10 @@ int main()
         strcpy(player[i].username, "");
         player[i].challenge = -9999;
         player[i].isAvailable = 0;
-        player[i].opponent = NULL;
+        player[i].opponentSockdes = 0;
         player[i].isLogged = 0;
         player[i].inviteSockdes = 0;
+        strcpy(player[i].ipAddress, "");
     }
 
     if( (listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -121,7 +122,9 @@ int main()
             }
 
             //inform user of socket number - used in send and receive commands
-            printf("New connection , socket fd is %d , ip is : %s , port : %d \n", new_sock, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+            char thisClientIp[10] = "";
+            sprintf(thisClientIp,"%s", inet_ntoa(address.sin_addr));
+            printf("New connection , socket fd is %d , ip is : %s , port : %d \n", new_sock, thisClientIp, ntohs(address.sin_port));
             char *message = "Welcome to the multi-player console chess server\n";
             //send new connection greeting message
             if( send(new_sock, message, strlen(message), 0) != strlen(message) ) {
@@ -135,8 +138,8 @@ int main()
                 //if position is empty
                 if( player[i].sockdes == 0 ) {
                     player[i].sockdes = new_sock;
+                    strcpy(player[i].ipAddress,thisClientIp);
                     printf("Adding to list of sockets as %d\n", i);
-
                     break;
                 }
             }
@@ -198,6 +201,7 @@ int main()
                     /// receive A ready (ack) status: 206 ~ [B's name]
                     /// forward it to B: 206 ~ [A's name]
                     StartStep3In3WaysHandshake();
+                    InitLog();
                     break;
                 }
                 case 207: {
@@ -212,19 +216,26 @@ int main()
 
                 /// Game
                 case 300:
-                    /// move: 300 ~ [cordinate]
-                    break;
-                case 301:
-                    /// move + win signal
+                    /// Receive move from playerX: 300 ~ [cordinate]
+                    /// forward to playerY: 301 ~ [cordinate]
+                    GetMoveAndForwardMove();
                     break;
                 case 302:
-                    /// send gamelog
+                    /// Receive game result signal: 302
+                    /// send game log, after all done, reset both player
+                    ProcessGameResult();
                     break;
-                case 309:
+                case 309: {
                     /// quit signal
-                    close(sd);
-                    ResetPlayer(&player[i]);
+                    int opponentSockdes = player[i].opponentSockdes;
+                    player[i].isAvailable = 1;
+                    player[i].opponentSockdes = 0;
+                    player[opponentSockdes].isAvailable = 1;
+                    player[opponentSockdes].opponentSockdes = 0;
+                    SendLog();
+
                     break;
+                }
                 default:
                     printf("Unrecognized code: %d\n", ms.command);
                     close(sd);

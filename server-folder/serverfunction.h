@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include "linkedlist.h"
 
@@ -138,5 +139,42 @@ void ListAllPlayers();
  *
  */
 void GetInvitationList();
+
+/** \brief Receive move from playerX: 300 ~ [cordinate]
+ *          forward to playerY: 301 ~ [cordinate]
+ *          or if playerY disconnected, send playerX to main menu
+ * \param
+ * \param
+ * \return
+ *
+ */
+void GetMoveAndForwardMove();
+
+/** \brief Receive game result: 302
+ *
+ * \param
+ * \param
+ * \return
+ *
+ */
+void ProcessGameResult();
+
+/** \brief Game has started, init log
+ *
+ * \param
+ * \param
+ * \return
+ *
+ */
+void InitLog();
+
+/** \brief Game has ended, send log to two players
+ *
+ * \param
+ * \param
+ * \return
+ *
+ */
+void SendLog();
 
 #endif // SERVERFUNCTION_H_INCLUDED
