@@ -55,6 +55,7 @@ int main()
         player[i].isLogged = 0;
         player[i].inviteSockdes = 0;
         strcpy(player[i].ipAddress, "");
+        strcpy(player[i].logFileName, "");
     }
 
     if( (listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -222,17 +223,17 @@ int main()
                     break;
                 case 302:
                     /// Receive game result signal: 302
-                    /// send game log, after all done, reset both player
+                    /// send game log, reset players: status, opponent sockes, log file name
                     ProcessGameResult();
                     break;
                 case 309: {
-                    /// quit signal
-                    int opponentSockdes = player[i].opponentSockdes;
-                    player[i].isAvailable = 1;
-                    player[i].opponentSockdes = 0;
-                    player[opponentSockdes].isAvailable = 1;
-                    player[opponentSockdes].opponentSockdes = 0;
-                    SendLog();
+                    /// quit signal: A quit = A lose => 302
+//                    int opponentSockdes = player[i].opponentSockdes;
+//                    player[i].isAvailable = 1;
+//                    player[i].opponentSockdes = 0;
+//                    player[opponentSockdes].isAvailable = 1;
+//                    player[opponentSockdes].opponentSockdes = 0;
+//                    SendLog();
 
                     break;
                 }

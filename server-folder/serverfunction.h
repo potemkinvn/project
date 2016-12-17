@@ -66,6 +66,15 @@ message ParseMessage(char recv_data[]);
  */
 int GetPlayerIndexOnUsername(char username[], playerType player[30]);
 
+/** \brief Get connected player index on sockdes
+ *
+ * \param int sockdes :sockdes to find
+ * \param playerType player[30] :array of all player in server
+ * \return
+ *
+ */
+int GetPlayerIndexOnSockdes(int sockdes, playerType player[30]);
+
 /** \brief Test username function
  *
  * \param
@@ -159,7 +168,7 @@ void GetMoveAndForwardMove();
  */
 void ProcessGameResult();
 
-/** \brief Game has started, init log
+/** \brief Game has started, create log file, set player[i].logFileName
  *
  * \param
  * \param

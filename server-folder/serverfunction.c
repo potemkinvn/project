@@ -36,6 +36,7 @@ void ResetPlayer(playerType *pl)
     pl->isLogged = 0;
     pl->inviteSockdes = 0;
     strcpy(pl->ipAddress, "");
+    strcpy(pl->logFileName, "");
 }
 
 void myFlush()
@@ -120,6 +121,24 @@ int GetPlayerIndexOnUsername(char username[], playerType player[30])
     int i;
     for(i=0; i<30; i++) {
         if(strcmp(username,player[i].username)==0) {
+            return i;
+        }
+    }
+    return -9999;
+}
+
+/** \brief Get connected player index on sockdes
+ *
+ * \param int sockdes :sockdes to find
+ * \param playerType player[30] :array of all player in server
+ * \return
+ *
+ */
+int GetPlayerIndexOnSockdes(int sockdes, playerType player[30])
+{
+    int i;
+    for(i=0; i<30; i++) {
+        if(sockdes == player[i].sockdes) {
             return i;
         }
     }
@@ -318,12 +337,12 @@ void StartStep2In3WaysHandshake()
     ms.command = 203;
     int playerAIndex = GetPlayerIndexOnUsername(ms.message, player);
     int error = 0;
-    if(playerAIndex == -9999){
+    if(playerAIndex == -9999) {
         error = 1;
-    }else if(player[playerAIndex].inviteSockdes != player[i].sockdes){
+    } else if(player[playerAIndex].inviteSockdes != player[i].sockdes) {
         error = 1;
     }
-    if(error){
+    if(error) {
         /// this playerA not exits or playerA's invitation expired, send this back to B
         ms.command = 204;
         sprintf(buff,"%d",ms.command);
@@ -379,6 +398,9 @@ void StartStep3In3WaysHandshake()
     /// set those 2 players opponentSockdes
     player[i].opponentSockdes = player[playerBIndex].sockdes;
     player[playerBIndex].opponentSockdes = player[i].sockdes;
+
+    /// reset playerA (inviter) inviteSockdes, cause they are playing now
+    player[i].inviteSockdes = 0;
 }
 
 /** \brief List all players
@@ -448,6 +470,7 @@ void GetInvitationList()
 
 /** \brief Receive move from playerX: 300 ~ [cordinate]. Eg: 300 ~ 0010
  *          forward to playerY: 301 ~ [cordinate]
+ *          and update log
  *          or if playerY disconnected, send playerX to main menu
  * \param
  * \param
@@ -475,9 +498,19 @@ void GetMoveAndForwardMove()
             ResetPlayer(&player[i]);
         }
     }
+
+    FILE *fptrLog;
+    if( (fptrLog=fopen(player[i].logFileName, "w+")) == NULL) {
+        printf("Cannot open file %s.\n", player[i].logFileName);
+        return;
+    }
+
+    fprintf(fptrLog, "Player '%s' move: %s\n", player[i].username, ms.message);
+    fclose(fptrLog);
 }
 
 /** \brief Receive game result: 302
+ *          send game log, after all done, reset both player
  *
  * \param
  * \param
@@ -486,10 +519,36 @@ void GetMoveAndForwardMove()
  */
 void ProcessGameResult()
 {
+    FILE *fptrLog;
+    char timeend[10] = "";
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    int playerAIndex = i;
+    int playerBIndex = GetPlayerIndexOnSockdes(player[playerAIndex].opponentSockdes, player);
 
+    /// Update time end in log file
+    sprintf(timeend,"%d/%d/%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    if( (fptrLog=fopen(player[i].logFileName, "w+")) == NULL) {
+        printf("Cannot open file %s.\n", player[i].logFileName);
+        return;
+    }
+    fprintf(fptrLog, "\nTime end: %s\n", timeend);
+    fclose(fptrLog);
+
+    /// Reset players: status, opponent sockes, log file name
+    player[i].isAvailable = 1;
+    player[i].opponentSockdes = 0;
+    strcpy(player[i].logFileName, "");
+    player[playerBIndex].isAvailable = 1;
+    player[playerBIndex].opponentSockdes = 0;
+    strcpy(player[playerBIndex].logFileName, "");
+
+    /// send log file to players
+    SendLog(i);
+    SendLog(playerBIndex);
 }
 
-/** \brief Game has started, init log
+/** \brief Game has started, create log file, set player[i].logFileName
  *
  * \param
  * \param
@@ -501,27 +560,28 @@ void InitLog()
     FILE *fptrLog;
     char filename[50] = "";
     char timestart[10] = "";
-    int opponentSockdes = player[i].opponentSockdes;
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
+    int opponentIndex;
 
+    opponentIndex = GetPlayerIndexOnSockdes(player[i].opponentSockdes, player);
     sprintf(timestart,"%d%d%d%d%d%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    sprintf(filename,"log_%s_%s_%s.txt",timestart, player[i].username, player[opponentSockdes].username);
+    sprintf(filename,"logs/log_%s_%s_%s.txt",timestart, player[i].username, player[opponentIndex].username);
+    strcpy(player[i].logFileName,filename);
+    strcpy(player[opponentIndex].logFileName,filename);
 
     if( (fptrLog=fopen(filename, "w")) == NULL) {
         printf("Cannot open file %s.\n", filename);
         return;
     }
 
-    fprintf(fptrLog,"==================Chess multi-player log==================\n");
+    sprintf(timestart,"%d/%d/%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+    fprintf(fptrLog,"==================Chess multi-player log==================\n\n");
     fprintf(fptrLog,"Time start: %s\n", timestart);
     fprintf(fptrLog,"(Inviter - Black) Player '%s' IP: %s\n",player[i].username, player[i].ipAddress);
-    fprintf(fptrLog,"( Accept - White) Player '%s' IP: %s\n",player[opponentSockdes].username, player[opponentSockdes].ipAddress);
-//    fprintf(fptrLog,"",);
-
-
-
-
+    fprintf(fptrLog,"( Accept - White) Player '%s' IP: %s\n\n",player[opponentIndex].username, player[opponentIndex].ipAddress);
+    fclose(fptrLog);
 }
 
 /** \brief Game has ended, send log to two players
@@ -531,7 +591,66 @@ void InitLog()
  * \return
  *
  */
-void SendLog()
+void SendLog(int playerIndex)
 {
+    FILE *fptrLog;
+    int fileSize = 0;
 
+    if( (fptrLog=fopen(player[playerIndex].logFileName, "r")) == NULL) {
+        printf("Cannot open file %s.\n", player[playerIndex].logFileName);
+        return;
+    }
+    fseek(fptrLog, 0, SEEK_END);
+    fileSize = ftell(fptrLog);
+    rewind(fptrLog);
+    printf("File size in server: %d bytes\n", fileSize);
+
+    /// send file size
+    sprintf(buff,"%d",fileSize);
+    bytes_sent = send(player[playerIndex].sockdes, buff, sizeof(buff), 0);
+    if(bytes_sent <= 0) {
+        printf("\nError! Cannot send file size to client!\n");
+        close(player[playerIndex].sockdes);
+        ResetPlayer(&player[playerIndex]);
+        return;
+    }
+
+    /// Receive file size confirm
+    bytes_received = recv(player[playerIndex].sockdes,buff,1024,0);
+    if(bytes_received <= 0) {
+        printf("\nError! Cannot receive data from client!\n");
+        close(player[playerIndex].sockdes);
+        ResetPlayer(&player[playerIndex]);
+        return;
+    }
+    buff[bytes_received] = '\0';
+    int file_size_confirm = atoi(buff);
+    printf("Client confirm file size: %d bytes\n", file_size_confirm);
+
+    /// Send chunks of input file
+    int remain = fileSize;
+    int test = 0, ret;
+    // allocate memory to contain the whole file:
+    char *buffer = (char*) malloc (sizeof(char)*fileSize);
+    if (buffer == NULL) {
+        printf("Memory error\n");
+        return;
+    }
+    // copy the file into the buffer:
+    test = fread (buffer,1,fileSize,fptrLog);
+    if(test != fileSize) {
+        printf("Load file content to buffer failed.");
+    }
+    while(remain > 0) {
+        ret = send(player[playerIndex].sockdes, buffer, remain, 0);
+        if(ret == -1) {
+            printf("\nError! Cannot send data to client!\n");
+            close(player[playerIndex].sockdes);
+            ResetPlayer(&player[playerIndex]);
+            return;
+        }
+        remain -= ret;
+    }
+
+    fclose(fptrLog);
 }

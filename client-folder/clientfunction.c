@@ -236,7 +236,7 @@ int sendInvitation()
     setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 
     /// wait for result: acceptance from player B or failed
-    printf("Waiting response from player '%s' for 15 seconds ...\n", name);
+    printf("Waiting response from player '%s' for 30 seconds ...\n", name);
     bytes_received = recv(client_sock,buff,1024,0);
     if(bytes_received <= 0) {
         /// send to server stop invite status (to toggle inviteSockdes back to 0)
