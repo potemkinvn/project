@@ -77,3 +77,31 @@
 1481883844 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/main.c
 	"clientfunction.h"
 
+1481982852 source:/home/Flick/project/client-folder/main.c
+	"clientfunction.h"
+
+1481982852 /home/Flick/project/client-folder/clientfunction.h
+	<stdio.h>
+	<stdlib.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	<sys/socket.h>
+	<sys/types.h>
+	<unistd.h>
+	<string.h>
+	"messagetype.h"
+	"playertype.h"
+	"piece.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
+1481982852 /home/Flick/project/client-folder/messagetype.h
+
+1481982852 /home/Flick/project/client-folder/playertype.h
+
+1481982852 /home/Flick/project/client-folder/piece.h
+
+1481996475 source:/home/Flick/project/client-folder/clientfunction.c
+	"clientfunction.h"
+

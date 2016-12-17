@@ -1,0 +1,6 @@
+==================Chess multi-player log==================
+
+Time start: 2016/12/17 22:59:35
+(Inviter - Black) Player 'truongnm' IP: 127.0.0.1
+( Accept - White) Player 'dungta' IP: 127.0.0.1
+

@@ -346,6 +346,7 @@ int acceptInvitation()
     return 0;
 }
 
+
 void setup()
 {
     int i,j;
@@ -1309,9 +1310,15 @@ int PlayGame(int side)
                         exit(-1);
                     }
 
-                    return 0;
+                }
                 }
                 ms = ParseMessage(buff);
+                strcpy(command,ms.message);
+                printf("\nNext Move is: %s\n",command);
+                a = command[0]-'0';
+                b = command[1]-'0';
+                c = command[2]-'0';
+                d = command[3]-'0';
 
                 if(strcmp(command,"1111")==0) {
                     // tmp=1;
@@ -1360,7 +1367,6 @@ int PlayGame(int side)
                     printf("Result: %d\n",gameresult);
                     break;
                 }
-            }
             printboard();
             break;
         case 1:
@@ -1411,6 +1417,14 @@ int PlayGame(int side)
                     }
                 }
                 if(gameresult != 0) break;
+                ms.command = 300;
+                sprintf(buff, "%d ~ %s", ms.command, command);
+                bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+                if(bytes_sent <= 0) {
+                    printf("\nError! Cannot send data to sever!\n");
+                    close(client_sock);
+                    exit(-1);
+                }
             }
 //   reserve code       }
 //                if(turn!=side)
@@ -1418,6 +1432,32 @@ int PlayGame(int side)
 //                   receive move form server and extract into a,b,c,d
 //               }
             if(turn != side) {
+                /// set timeout 30 seconds
+                struct timeval tv;
+                tv.tv_sec = 30;  /* 30 Secs Timeout */
+                tv.tv_usec = 0;
+                setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
+
+                /// wait for move from server for 30s
+                bytes_received = recv(client_sock,buff,1024,0);
+                if(bytes_received <= 0) {
+                    /// send to server I win
+                    sprintf(buff, "%d", 201);
+                    bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+                    if(bytes_sent <= 0) {
+                        printf("\nError! Cannot send data to sever!\n");
+                        close(client_sock);
+                        exit(-1);
+                    }
+                    }
+                }
+                ms = ParseMessage(buff);
+                strcpy(command,ms.message);
+                printf("\nNext Move is: %s\n",command);
+                a = command[0]-'0';
+                b = command[1]-'0';
+                c = command[2]-'0';
+                d = command[3]-'0';
                 if(strcmp(command,"6666")==0) {
                     printf("Black castled queen's side \n");
                     Move(7,4,7,2);
@@ -1464,7 +1504,7 @@ int PlayGame(int side)
                     printf("Result: %d\n",gameresult);
                     break;
                 }
-            }
+
 
             printboard();
             break;

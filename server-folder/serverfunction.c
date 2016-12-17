@@ -480,8 +480,10 @@ void GetInvitationList()
 void GetMoveAndForwardMove()
 {
     ms.command = 301;
-    int playerYIndex = player[i].opponentSockdes;
+    int playerYIndex = GetPlayerIndexOnSockdes(player[i].opponentSockdes, player);
     sprintf(buff,"%d ~ %s",ms.command, ms.message);
+    int opp = player[playerYIndex].sockdes;
+    printf("\nOpponent's sockes: %d\n",opp);
     bytes_sent = send(player[playerYIndex].sockdes,buff,sizeof(buff),0);
     if (bytes_sent <= 0) {
         /// if playerY disconnected, reset playerY, send playerX to main menu
