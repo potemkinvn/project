@@ -1311,7 +1311,7 @@ int PlayGame(int side)
                     }
 
                 }
-                }
+
                 ms = ParseMessage(buff);
                 strcpy(command,ms.message);
                 printf("\nNext Move is: %s\n",command);
@@ -1319,6 +1319,7 @@ int PlayGame(int side)
                 b = command[1]-'0';
                 c = command[2]-'0';
                 d = command[3]-'0';
+                }
 
                 if(strcmp(command,"1111")==0) {
                     // tmp=1;
@@ -1450,7 +1451,7 @@ int PlayGame(int side)
                         exit(-1);
                     }
                     }
-                }
+
                 ms = ParseMessage(buff);
                 strcpy(command,ms.message);
                 printf("\nNext Move is: %s\n",command);
@@ -1458,6 +1459,7 @@ int PlayGame(int side)
                 b = command[1]-'0';
                 c = command[2]-'0';
                 d = command[3]-'0';
+                }
                 if(strcmp(command,"6666")==0) {
                     printf("Black castled queen's side \n");
                     Move(7,4,7,2);

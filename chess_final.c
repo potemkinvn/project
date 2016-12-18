@@ -841,6 +841,30 @@ int BlackFaultCheck(int a,int b,int c,int d)
     return result;
 }
 
+int WhiteMate(int *whitelist)
+{
+    int result = 1;
+    int i;
+    int val;
+    int a,b,c,d;
+    for(i=0;i<218;i++)
+    {
+        val = *(whitelist+i);
+        a = val/1000;
+        b = val/100 - a*10;
+        c = val/10 - a*100 - b*10;
+        d = val%10;
+        printf("%d%d%d%d|",a,b,c,d);
+        if(WhiteFaultCheck(a,b,c,d)!=0)
+        {
+            printf("\nLegal move is %d%d%d%d\n",a,b,c,d);
+            result = 0;
+            break;
+        }
+    }
+    return result;
+}
+
 int PlayGame(int side)
 {
     setup();
@@ -856,11 +880,14 @@ int PlayGame(int side)
     int blackcastled=0;
     int whitecastled=0;
     char command[4];
+    int *whitelist = WhiteMoveList(enpass_a,enpass_b);
+    int *blacklist = BlackMoveList(enpass_a,enpass_b);
     int turn = 0; //0 is white,1 is black
     while(gameresult == 0){
         switch(turn){
             case 0:
                 if(gameresult!=0) break;
+                printf("\nEn Passant square: %d%d",enpass_a,enpass_b);
                 check = 0;
                 for(a=0;a<8;a++){
                     if(check!=0) break;
@@ -959,6 +986,7 @@ int PlayGame(int side)
                 break;
             case 1:
                 if(gameresult!=0) break;
+                printf("\nEn Passant square: %d%d",enpass_a,enpass_b);
                 check = 0;
                 for(a=0;a<8;a++){
                     if(check!=0) break;
@@ -1050,6 +1078,14 @@ int PlayGame(int side)
 
                 turn--;
                 printf("\e[2J\e[H");
+               // printf("whitemate: %d?\n",WhiteMate(whitelist));
+                    if(WhiteMate(whitelist)==1)
+                    {
+                        printf("Black has done a mate!!\n");
+                        gameresult = 2;
+
+                    }
+
                 printboard();
                 break;
         }
