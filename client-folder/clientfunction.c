@@ -230,10 +230,10 @@ int sendInvitation()
     }
 
     /// set timeout 30 seconds
-    struct timeval tv;
-    tv.tv_sec = 30;  /* 30 Secs Timeout */
-    tv.tv_usec = 0;
-    setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
+    //struct timeval tv;
+    // tv.tv_sec = 30;  /* 30 Secs Timeout */
+    // tv.tv_usec = 0;
+    //  setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 
     /// wait for result: acceptance from player B or failed
     printf("Waiting response from player '%s' for 30 seconds ...\n", name);
@@ -797,18 +797,18 @@ int *WhiteMoveList(int epa,int epb)
                             d = d;
                             allmoves[z]=a*1000+b*100+c*10+d;
                             z++;
-                            c = 3;
-                            d = b;
-                            if(ValidSquare(a,b,c,d)!=0) {
-                                if(board[c][d]==0) {
-                                    a = a;
-                                    b = b;
-                                    c = c;
-                                    d = d;
-                                    allmoves[z]=a*1000+b*100+c*10+d;
-                                    z++;
-                                }
-                            }
+                        }
+                    }
+                    c = 3;
+                    d = b;
+                    if(ValidSquare(a,b,c,d)!=0) {
+                        if(board[c][d]==0) {
+                            a = a;
+                            b = b;
+                            c = c;
+                            d = d;
+                            allmoves[z]=a*1000+b*100+c*10+d;
+                            z++;
                         }
                     }
                 } else {
@@ -1209,6 +1209,13 @@ int BlackMate(int *blacklist)
 }
 
 /// 0: white - receive invite, 1: black - send invite
+
+int updateList(int *list1,int *list2)
+{
+    list1 = WhiteMoveList(enpass_a,enpass_b);
+    list2 = BlackMoveList(enpass_a,enpass_b);
+    return 0;
+}
 int PlayGame(int side)
 {
     setup();
@@ -1217,7 +1224,7 @@ int PlayGame(int side)
     int tmp;
     int blackfault=0;
     int whitefault=0;
-    int gameresult=0; //0 - is playing; 1 - white won; 2 - black won; 3 - draw
+    int gameresult=0; //0 - draw; 1 - white won by mate; 2 - black won by mate; 3 - black won by fault; 4 - white won by fault
     int a,b,c,d;
     int wka,wkb,bka,bkb;
     int check; //king's position
@@ -1228,6 +1235,18 @@ int PlayGame(int side)
     int *blacklist = BlackMoveList(enpass_a,enpass_b);
     int turn = 0; //0 is white,1 is black
     while(gameresult == 0) {
+        //   for(i=0;i<218;i++)
+        //      {
+        //          if(*(whitelist+i)==0) break;
+//           if(*(whitelist+i)==1737) printf("abcxyz");
+//           if(*(whitelist+i)!=0) printf("%d|",*(whitelist+i));
+        //      }
+        //      printf("\n");
+        //      for(i=0;i<218;i++)
+        //     {
+        //         if(*(blacklist+i)!=0) printf("%d|",*(blacklist+i));
+        //     }
+        printf("\n");
         switch(turn) {
         case 0:
             printf("\game result: %d\n",gameresult);
@@ -1273,7 +1292,7 @@ int PlayGame(int side)
                     }
                     if(whitefault==3) {
                         printf("White has committed 3 technical fault!! White has lost the game!! \n");
-                        gameresult = 2;
+                        gameresult = 3;
                         break;
                     }
                 }
@@ -1293,10 +1312,10 @@ int PlayGame(int side)
             /// receive move from server and extract into a,b,c,d: 301 ~ [cordinate]
             if(turn!=side) {
                 /// set timeout 30 seconds
-                struct timeval tv;
-                tv.tv_sec = 30;  /* 30 Secs Timeout */
-                tv.tv_usec = 0;
-                setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
+                //        struct timeval tv;
+                //        tv.tv_sec = 30;  /* 30 Secs Timeout */
+                //        tv.tv_usec = 0;
+                //       setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 
                 /// wait for move from server for 30s
                 bytes_received = recv(client_sock,buff,1024,0);
@@ -1319,55 +1338,60 @@ int PlayGame(int side)
                 b = command[1]-'0';
                 c = command[2]-'0';
                 d = command[3]-'0';
-                }
+            }
 
-                if(strcmp(command,"1111")==0) {
-                    // tmp=1;
-                    // printf("asdsad:%d \n",tmp);
-                    printf("White castled queen's side \n");
-                    Move(0,4,0,2);
-                    Move(0,0,0,3);
-                    turn++;
-                    printf("\e[2J\e[H");
-                    printboard();
-                    break;
-                }
-                if(strcmp(command,"2222")==0) {
-                    printf("White castled king's side \n ");
-                    Move(0,4,0,6);
-                    Move(0,7,0,5);
-                    turn++;
-                    printf("\e[2J\e[H");
-                    printboard();
-                    break;
-                }
-                if(board[a][b]==wrook || board[a][b]==wking) whitecastled =1;
-                if(board[a][b]==wpawn&&c==enpass_a&&d==enpass_b) {
-                    Move(a,b,c,d);
-                    board[enpass_a-1][enpass_b]=blank;
-                    turn++;
-                    printf("\e[2J\e[H");
-                    printboard();
-                    break;
-                }
-                if(board[a][b]==wpawn&&a<3) {
-                    enpass_a = c-1;
-                    enpass_b = d;
-                } else {
-                    enpass_a = -1;
-                    enpass_b = -1;
-                }
-                Move(a,b,c,d);
-
+            if(strcmp(command,"1111")==0) {
+                // tmp=1;
+                // printf("asdsad:%d \n",tmp);
+                printf("White castled queen's side \n");
+                Move(0,4,0,2);
+                Move(0,0,0,3);
+                updateList(whitelist,blacklist);
                 turn++;
-                epturn = 2;
                 printf("\e[2J\e[H");
-                if(BlackMate(blacklist)==1) {
-                    printf("White has done a mate!!\n");
-                    gameresult = 1;
-                    printf("Result: %d\n",gameresult);
-                    break;
-                }
+                printboard();
+                break;
+            }
+            if(strcmp(command,"2222")==0) {
+                printf("White castled king's side \n ");
+                Move(0,4,0,6);
+                Move(0,7,0,5);
+                updateList(whitelist,blacklist);
+                turn++;
+                printf("\e[2J\e[H");
+                printboard();
+                break;
+            }
+            if(board[a][b]==wrook || board[a][b]==wking) whitecastled =1;
+            if(board[a][b]==wpawn&&c==enpass_a&&d==enpass_b) {
+                Move(a,b,c,d);
+                board[enpass_a-1][enpass_b]=blank;
+                updateList(whitelist,blacklist);
+                turn++;
+                printf("\e[2J\e[H");
+                printboard();
+                break;
+            }
+            if(board[a][b]==wpawn&&a<3) {
+                enpass_a = c-1;
+                enpass_b = d;
+            } else {
+                enpass_a = -1;
+                enpass_b = -1;
+            }
+            Move(a,b,c,d);
+
+
+            turn++;
+            epturn = 2;
+            updateList(whitelist,blacklist);
+            printf("\e[2J\e[H");
+            if(BlackMate(blacklist)==1) {
+                printf("White has done a mate!!\n");
+                gameresult = 1;
+                printf("Result: %d\n",gameresult);
+                break;
+            }
             printboard();
             break;
         case 1:
@@ -1413,7 +1437,7 @@ int PlayGame(int side)
                     }
                     if(blackfault==3) {
                         printf("Black has committed 3 technical fault!! Black has lost the game!! \n");
-                        gameresult = 1;
+                        gameresult = 4;
                         break;
                     }
                 }
@@ -1434,10 +1458,10 @@ int PlayGame(int side)
 //               }
             if(turn != side) {
                 /// set timeout 30 seconds
-                struct timeval tv;
-                tv.tv_sec = 30;  /* 30 Secs Timeout */
-                tv.tv_usec = 0;
-                setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
+                //        struct timeval tv;
+                //        tv.tv_sec = 30;  /* 30 Secs Timeout */
+                //       tv.tv_usec = 0;
+                //       setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 
                 /// wait for move from server for 30s
                 bytes_received = recv(client_sock,buff,1024,0);
@@ -1450,7 +1474,7 @@ int PlayGame(int side)
                         close(client_sock);
                         exit(-1);
                     }
-                    }
+                }
 
                 ms = ParseMessage(buff);
                 strcpy(command,ms.message);
@@ -1459,53 +1483,58 @@ int PlayGame(int side)
                 b = command[1]-'0';
                 c = command[2]-'0';
                 d = command[3]-'0';
-                }
-                if(strcmp(command,"6666")==0) {
-                    printf("Black castled queen's side \n");
-                    Move(7,4,7,2);
-                    Move(7,0,7,3);
-                    turn--;
-                    printf("\e[2J\e[H");
-                    printboard();
-                    break;
-                }
-                if(strcmp(command,"7777")==0) {
-                    printf("Black castled king's side \n ");
-                    Move(7,4,7,6);
-                    Move(7,0,7,5);
-                    turn--;
-                    printf("\e[2J\e[H");
-                    printboard();
-                    break;
-                }
-                if(board[a][b]==brook || board[a][b]==bking) whitecastled =1;
-                if(board[a][b]==bpawn&&c==enpass_a&&d==enpass_b) {
-                    Move(a,b,c,d);
-                    board[enpass_a+1][enpass_b]=blank;
-                    turn--;
-                    printf("\e[2J\e[H");
-                    printboard();
-                    break;
-                }
-                if(board[a][b]==bpawn&&a>5) {
-                    enpass_a = c+1;
-                    enpass_b = d;
-                } else {
-                    enpass_a = -1;
-                    enpass_b = -1;
-                }
-                Move(a,b,c,d);
-
+            }
+            if(strcmp(command,"6666")==0) {
+                printf("Black castled queen's side \n");
+                Move(7,4,7,2);
+                Move(7,0,7,3);
+                updateList(whitelist,blacklist);
                 turn--;
-                epturn = 1;
                 printf("\e[2J\e[H");
-                // printf("whitemate: %d?\n",WhiteMate(whitelist));
-                if(WhiteMate(whitelist)==1) {
-                    printf("Black has done a mate!!\n");
-                    gameresult = 2;
-                    printf("Result: %d\n",gameresult);
-                    break;
-                }
+                printboard();
+                break;
+            }
+            if(strcmp(command,"7777")==0) {
+                printf("Black castled king's side \n ");
+                Move(7,4,7,6);
+                Move(7,0,7,5);
+                updateList(whitelist,blacklist);
+                turn--;
+                printf("\e[2J\e[H");
+                printboard();
+                break;
+            }
+            if(board[a][b]==brook || board[a][b]==bking) whitecastled =1;
+            if(board[a][b]==bpawn&&c==enpass_a&&d==enpass_b) {
+                Move(a,b,c,d);
+                board[enpass_a+1][enpass_b]=blank;
+                updateList(whitelist,blacklist);
+                turn--;
+                printf("\e[2J\e[H");
+                printboard();
+                break;
+            }
+            if(board[a][b]==bpawn&&a>5) {
+                enpass_a = c+1;
+                enpass_b = d;
+            } else {
+                enpass_a = -1;
+                enpass_b = -1;
+            }
+            Move(a,b,c,d);
+            updateList(whitelist,blacklist);
+
+            turn--;
+            epturn = 1;
+            printf("\e[2J\e[H");
+            printboard();
+            // printf("whitemate: %d?\n",WhiteMate(whitelist));
+            if(WhiteMate(whitelist)==1) {
+                printf("Black has done a mate!!\n");
+                gameresult = 2;
+                printf("Result: %d\n",gameresult);
+                break;
+            }
 
 
             printboard();
@@ -1513,4 +1542,101 @@ int PlayGame(int side)
         }
     }
     return gameresult;
+}
+
+void SendResult(int result)
+{
+    ms.command = 302;
+    switch(result) {
+    case 0:
+        strcpy(ms.message, "\nDraw game!!\n");
+        break;
+    case 1:
+        strcpy(ms.message, "\nWhite won by mate!!\n");
+        break;
+    case 2:
+        strcpy(ms.message, "\nBlack won by mate!!\n");
+        break;
+    case 3:
+        strcpy(ms.message, "\nWhite won by fault - Black has committed 3 technical fault!!\n");
+        break;
+    case 4:
+        strcpy(ms.message, "\nBlack won by fault - White has committed 3 technical fault!!\n");
+        break;
+    }
+
+    sprintf(buff, "%d ~ %s", ms.command, ms.message);
+    bytes_sent = send(client_sock, buff, sizeof(buff), 0);
+    if(bytes_sent <= 0) {
+        printf("\nError! Cannot send data to sever!\n");
+        close(client_sock);
+        exit(-1);
+    }
+}
+
+void ReceiveLog()
+{
+    char logFileName[50];
+
+    /// receive log file name
+    memset(buff, '\0', (strlen(buff)+1));
+    bytes_received = recv(client_sock,buff,sizeof(buff),0);
+    if (bytes_received <= 0) {
+        printf("Error! Can not receive data from server!\n");
+        close(client_sock);
+        exit(-1);
+    }
+    buff[bytes_received] = '\0';
+    strcpy(logFileName, buff);
+
+    /// get file size from server
+    bytes_received = recv(client_sock,buff,sizeof(buff),0);
+    if (bytes_received <= 0) {
+        printf("Error! Can not receive data from server!\n");
+        close(client_sock);
+        exit(-1);
+    }
+    buff[bytes_received] = '\0';
+    int file_size = atoi(buff);
+    printf("Log file size from server: %d bytes\n", file_size);
+
+    /// send confirm file size received
+    char tmp[50];
+    sprintf(tmp,"%d",file_size);
+    bytes_sent = send(client_sock, tmp, sizeof(tmp), 0);
+    if (bytes_sent < 0) {
+        printf("Error! Can not sent data to client!\n");
+        close(client_sock);
+        return 1;
+    }
+
+    /// Get chunks of input file from server
+    int remain = file_size, ret;
+    char *buffer = (char*)malloc(sizeof(char)*file_size);
+    memset(buff, '\0', (strlen(buff)+1));
+    while(remain > 0) {
+        ret = recv(client_sock, buff, sizeof(buff), 0);
+        if(ret == -1) {
+            printf("Error! Can not receive data from client!\n");
+            close(client_sock);
+            exit(-1);
+        }
+        remain -= ret;
+        buff[ret] = '\0';
+        strcat(buffer,buff);
+    }
+
+    /// write the result to log file
+    FILE * output = fopen(logFileName, "w");
+    if(!output){
+        printf("Error writing to file %s!", logFileName);
+        return 1;
+    }
+    printf("%s", buffer);
+    fprintf(output, "%s",buffer);
+
+    printf("Received log file %s.", logFileName);
+
+    fclose(output);
+    free(buffer);
 }

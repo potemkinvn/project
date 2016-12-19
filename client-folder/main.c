@@ -15,7 +15,7 @@ playerType thisPlayer;
 piece board[8][8];
 int enpass_a=-1,enpass_b=-1;
 int epturn = 1; //en passant turn: 1~white 2~black
-const piece startup[8][8]={wrook,wknight,wbishop,wqueen,wking,wbishop,wknight,wrook,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank,blank, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, brook, bknight, bbishop, bqueen, bking, bbishop, bknight, brook};
+const piece startup[8][8]= {wrook,wknight,wbishop,wqueen,wking,wbishop,wknight,wrook,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,wpawn,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank,blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank, blank,blank, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, bpawn, brook, bknight, bbishop, bqueen, bking, bbishop, bknight, brook};
 
 
 void printMenu()
@@ -71,20 +71,74 @@ int main()
 
         case 2:
             /// send invitation - not go first
-            if(sendInvitation() == 1) {
+            while(sendInvitation() == 1) {
                 printf("Game on!!!");
                 /// go to game phase
                 int side = 1;
-                PlayGame(side);
+                int result = PlayGame(side);
+                switch(result) {
+                case 0:
+                    printf("\nDraw game!!\n");
+                    break;
+                case 1:
+                    printf("\nWhite won by mate!!\n");
+                    break;
+                case 2:
+                    printf("\nBlack won by mate!!\n");
+                    break;
+                case 3:
+                    printf("\nWhite won by fault - Black has committed 3 technical fault!!\n");
+                    break;
+                case 4:
+                    printf("\nBlack won by fault - White has committed 3 technical fault!!\n");
+                    break;
+                }
+
+                SendResult(result);
+                ReceiveLog();
+
+                char c;
+                printf("\n\nGame end. Want to play with another player? (y/n): ");
+                myFlush();
+                scanf("%c", &c);
+                if(c=='n')
+                    break;
             }
             break;
         case 3: {
             /// accept invitation - go first
-            if(acceptInvitation() == 1) {
+            while(acceptInvitation() == 1) {
                 printf("Game on!!!");
                 /// go to game phase
                 int side = 0;
-                PlayGame(side);
+                int result = PlayGame(side);
+                switch(result) {
+                case 0:
+                    printf("\nDraw game!!\n");
+                    break;
+                case 1:
+                    printf("\nWhite won by mate!!\n");
+                    break;
+                case 2:
+                    printf("\nBlack won by mate!!\n");
+                    break;
+                case 3:
+                    printf("\nWhite won by fault - Black has committed 3 technical fault!!\n");
+                    break;
+                case 4:
+                    printf("\nBlack won by fault - White has committed 3 technical fault!!\n");
+                    break;
+                }
+
+                SendResult(result);
+                ReceiveLog();
+
+                char c;
+                printf("\n\nGame end. Want to play with another player? (y/n): ");
+                myFlush();
+                scanf("%c", &c);
+                if(c=='n')
+                    break;
             }
             break;
         }

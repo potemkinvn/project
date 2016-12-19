@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
-	<File name="main.c" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="2207" topLine="58" />
-		</Cursor>
-		<Folding>
-			<Collapse line="82" />
-		</Folding>
-	</File>
 	<File name="clientfunction.c" open="1" top="1" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="48799" topLine="1483" />
+			<Cursor1 position="11039" topLine="255" />
+		</Cursor>
+		<Folding>
+			<Collapse line="217" />
+			<Collapse line="301" />
+			<Collapse line="350" />
+			<Collapse line="418" />
+			<Collapse line="423" />
+			<Collapse line="432" />
+			<Collapse line="464" />
+			<Collapse line="711" />
+			<Collapse line="959" />
+		</Folding>
+	</File>
+	<File name="main.c" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3188" topLine="24" />
 		</Cursor>
 	</File>
 	<File name="clientfunction.h" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">

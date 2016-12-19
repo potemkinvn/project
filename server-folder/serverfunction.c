@@ -502,7 +502,7 @@ void GetMoveAndForwardMove()
     }
 
     FILE *fptrLog;
-    if( (fptrLog=fopen(player[i].logFileName, "w+")) == NULL) {
+    if( (fptrLog=fopen(player[i].logFileName, "a")) == NULL) {
         printf("Cannot open file %s.\n", player[i].logFileName);
         return;
     }
@@ -526,28 +526,29 @@ void ProcessGameResult()
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     int playerAIndex = i;
-    int playerBIndex = GetPlayerIndexOnSockdes(player[playerAIndex].opponentSockdes, player);
+//    int playerBIndex = GetPlayerIndexOnSockdes(player[playerAIndex].opponentSockdes, player);
 
     /// Update time end in log file
     sprintf(timeend,"%d/%d/%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    if( (fptrLog=fopen(player[i].logFileName, "w+")) == NULL) {
+    if( (fptrLog=fopen(player[i].logFileName, "a")) == NULL) {
         printf("Cannot open file %s.\n", player[i].logFileName);
         return;
     }
+    fprintf(fptrLog, "%s", ms.message);
     fprintf(fptrLog, "\nTime end: %s\n", timeend);
     fclose(fptrLog);
 
     /// Reset players: status, opponent sockes, log file name
     player[i].isAvailable = 1;
     player[i].opponentSockdes = 0;
-    strcpy(player[i].logFileName, "");
-    player[playerBIndex].isAvailable = 1;
-    player[playerBIndex].opponentSockdes = 0;
-    strcpy(player[playerBIndex].logFileName, "");
+//    player[playerBIndex].isAvailable = 1;
+//    player[playerBIndex].opponentSockdes = 0;
+//    strcpy(player[playerBIndex].logFileName, "");
 
     /// send log file to players
-    SendLog(i);
-    SendLog(playerBIndex);
+    SendLog();
+    strcpy(player[i].logFileName, "");
+//    SendLog(playerBIndex);
 }
 
 /** \brief Game has started, create log file, set player[i].logFileName
@@ -593,15 +594,26 @@ void InitLog()
  * \return
  *
  */
-void SendLog(int playerIndex)
+void SendLog()
 {
     FILE *fptrLog;
     int fileSize = 0;
 
-    if( (fptrLog=fopen(player[playerIndex].logFileName, "r")) == NULL) {
-        printf("Cannot open file %s.\n", player[playerIndex].logFileName);
+    if( (fptrLog=fopen(player[i].logFileName, "r")) == NULL) {
+        printf("Cannot open file %s.\n", player[i].logFileName);
         return;
     }
+    /// send file name
+//    memset(buff, '\0', (strlen(buff)+1));
+//    strcpy(buff, player[i].logFileName);
+    bytes_sent = send(player[i].sockdes, player[i].logFileName, sizeof(player[i].logFileName), 0);
+    if(bytes_sent <= 0) {
+        printf("\nError! Cannot send file name to client!\n");
+        close(player[i].sockdes);
+        ResetPlayer(&player[i]);
+        return;
+    }
+
     fseek(fptrLog, 0, SEEK_END);
     fileSize = ftell(fptrLog);
     rewind(fptrLog);
@@ -609,20 +621,20 @@ void SendLog(int playerIndex)
 
     /// send file size
     sprintf(buff,"%d",fileSize);
-    bytes_sent = send(player[playerIndex].sockdes, buff, sizeof(buff), 0);
+    bytes_sent = send(player[i].sockdes, buff, sizeof(buff), 0);
     if(bytes_sent <= 0) {
         printf("\nError! Cannot send file size to client!\n");
-        close(player[playerIndex].sockdes);
-        ResetPlayer(&player[playerIndex]);
+        close(player[i].sockdes);
+        ResetPlayer(&player[i]);
         return;
     }
 
     /// Receive file size confirm
-    bytes_received = recv(player[playerIndex].sockdes,buff,1024,0);
+    bytes_received = recv(player[i].sockdes,buff,1024,0);
     if(bytes_received <= 0) {
         printf("\nError! Cannot receive data from client!\n");
-        close(player[playerIndex].sockdes);
-        ResetPlayer(&player[playerIndex]);
+        close(player[i].sockdes);
+        ResetPlayer(&player[i]);
         return;
     }
     buff[bytes_received] = '\0';
@@ -644,11 +656,11 @@ void SendLog(int playerIndex)
         printf("Load file content to buffer failed.");
     }
     while(remain > 0) {
-        ret = send(player[playerIndex].sockdes, buffer, remain, 0);
+        ret = send(player[i].sockdes, buffer, remain, 0);
         if(ret == -1) {
             printf("\nError! Cannot send data to client!\n");
-            close(player[playerIndex].sockdes);
-            ResetPlayer(&player[playerIndex]);
+            close(player[i].sockdes);
+            ResetPlayer(&player[i]);
             return;
         }
         remain -= ret;
