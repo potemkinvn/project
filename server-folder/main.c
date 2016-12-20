@@ -27,7 +27,6 @@ int bytes_sent,bytes_received;
 char buff[1024];
 message ms;
 fd_set readfds;
-FILE *input;
 
 int main()
 {
@@ -56,6 +55,7 @@ int main()
         player[i].inviteSockdes = 0;
         strcpy(player[i].ipAddress, "");
         strcpy(player[i].logFileName, "");
+        player[i].sentGameResult = 0;
     }
 
     if( (listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == 0) {

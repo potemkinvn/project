@@ -71,7 +71,7 @@ int main()
 
         case 2:
             /// send invitation - not go first
-            while(sendInvitation() == 1) {
+            if(sendInvitation() == 1) {
                 printf("Game on!!!");
                 /// go to game phase
                 int side = 1;
@@ -101,45 +101,13 @@ int main()
                 printf("\n\nGame end. Want to play with another player? (y/n): ");
                 myFlush();
                 scanf("%c", &c);
-                if(c=='n')
-                    break;
+                if(c=='y')
+                    FindAndPlayGame();
             }
             break;
         case 3: {
             /// accept invitation - go first
-            while(acceptInvitation() == 1) {
-                printf("Game on!!!");
-                /// go to game phase
-                int side = 0;
-                int result = PlayGame(side);
-                switch(result) {
-                case 0:
-                    printf("\nDraw game!!\n");
-                    break;
-                case 1:
-                    printf("\nWhite won by mate!!\n");
-                    break;
-                case 2:
-                    printf("\nBlack won by mate!!\n");
-                    break;
-                case 3:
-                    printf("\nWhite won by fault - Black has committed 3 technical fault!!\n");
-                    break;
-                case 4:
-                    printf("\nBlack won by fault - White has committed 3 technical fault!!\n");
-                    break;
-                }
-
-                SendResult(result);
-                ReceiveLog();
-
-                char c;
-                printf("\n\nGame end. Want to play with another player? (y/n): ");
-                myFlush();
-                scanf("%c", &c);
-                if(c=='n')
-                    break;
-            }
+            FindAndPlayGame();
             break;
         }
         }

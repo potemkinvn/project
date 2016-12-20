@@ -1589,6 +1589,14 @@ void ReceiveLog()
     buff[bytes_received] = '\0';
     strcpy(logFileName, buff);
 
+    /// send file name confirm
+    bytes_sent = send(client_sock, logFileName, sizeof(logFileName), 0);
+    if (bytes_sent < 0) {
+        printf("Error! Can not sent data to client!\n");
+        close(client_sock);
+        return 1;
+    }
+
     /// get file size from server
     bytes_received = recv(client_sock,buff,sizeof(buff),0);
     if (bytes_received <= 0) {
@@ -1613,6 +1621,7 @@ void ReceiveLog()
     /// Get chunks of input file from server
     int remain = file_size, ret;
     char *buffer = (char*)malloc(sizeof(char)*file_size);
+    buffer[0] = '\0';
     memset(buff, '\0', (strlen(buff)+1));
     while(remain > 0) {
         ret = recv(client_sock, buff, sizeof(buff), 0);
@@ -1628,15 +1637,52 @@ void ReceiveLog()
 
     /// write the result to log file
     FILE * output = fopen(logFileName, "w");
-    if(!output){
+    if(!output) {
         printf("Error writing to file %s!", logFileName);
         return 1;
     }
-    printf("%s", buffer);
+    printf("\n%s", buffer);
     fprintf(output, "%s",buffer);
 
     printf("Received log file %s.", logFileName);
 
-    fclose(output);
     free(buffer);
+    fclose(output);
+}
+
+void FindAndPlayGame()
+{
+    while(acceptInvitation() == 1) {
+        printf("Game on!!!");
+        /// go to game phase
+        int side = 0;
+        int result = PlayGame(side);
+        switch(result) {
+        case 0:
+            printf("\nDraw game!!\n");
+            break;
+        case 1:
+            printf("\nWhite won by mate!!\n");
+            break;
+        case 2:
+            printf("\nBlack won by mate!!\n");
+            break;
+        case 3:
+            printf("\nWhite won by fault - Black has committed 3 technical fault!!\n");
+            break;
+        case 4:
+            printf("\nBlack won by fault - White has committed 3 technical fault!!\n");
+            break;
+        }
+
+        SendResult(result);
+        ReceiveLog();
+
+        char c;
+        printf("\n\nGame end. Want to play with another player? (y/n): ");
+        myFlush();
+        scanf("%c", &c);
+        if(c=='n')
+            break;
+    }
 }

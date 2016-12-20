@@ -334,6 +334,9 @@ void ReceiveInvitationRequest()
  */
 void StartStep2In3WaysHandshake()
 {
+    /// if this player has finish previous game, set sentGameResult back
+    if(player[i].sentGameResult == 1) player[i].sentGameResult = 0;
+
     ms.command = 203;
     int playerAIndex = GetPlayerIndexOnUsername(ms.message, player);
     int error = 0;
@@ -412,6 +415,9 @@ void StartStep3In3WaysHandshake()
  */
 void ListAllPlayers()
 {
+    /// if this player has finish previous game, set sentGameResult back
+    if(player[i].sentGameResult == 1) player[i].sentGameResult = 0;
+
     memset(buff,'\0',(strlen(buff)+1));
     char tmp[100];
     strcpy(buff, "");
@@ -521,22 +527,26 @@ void GetMoveAndForwardMove()
  */
 void ProcessGameResult()
 {
-    FILE *fptrLog;
     char timeend[10] = "";
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    int playerAIndex = i;
-//    int playerBIndex = GetPlayerIndexOnSockdes(player[playerAIndex].opponentSockdes, player);
 
-    /// Update time end in log file
-    sprintf(timeend,"%d/%d/%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    if( (fptrLog=fopen(player[i].logFileName, "a")) == NULL) {
-        printf("Cannot open file %s.\n", player[i].logFileName);
-        return;
+    /// check if opponent send game result before this player -> skip update log
+    int playerBIndex = GetPlayerIndexOnSockdes(player[i].opponentSockdes, player);
+    if(player[playerBIndex].sentGameResult == 0) {
+        /// Update time end in log file
+        FILE *fptrLog;
+        sprintf(timeend,"%d/%d/%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        if( (fptrLog=fopen(player[i].logFileName, "a")) == NULL) {
+            printf("Cannot open file %s.\n", player[i].logFileName);
+            return;
+        }
+        fprintf(fptrLog, "%s", ms.message);
+        fprintf(fptrLog, "\nTime end: %s\n", timeend);
+        fclose(fptrLog);
+
+        player[i].sentGameResult = 1;
     }
-    fprintf(fptrLog, "%s", ms.message);
-    fprintf(fptrLog, "\nTime end: %s\n", timeend);
-    fclose(fptrLog);
 
     /// Reset players: status, opponent sockes, log file name
     player[i].isAvailable = 1;
@@ -614,6 +624,18 @@ void SendLog()
         return;
     }
 
+    /// recv file name confirm
+    bytes_received = recv(player[i].sockdes,buff,sizeof(buff),0);
+    if(bytes_received <= 0) {
+        printf("\nError! Cannot receive data from client!\n");
+        close(player[i].sockdes);
+        ResetPlayer(&player[i]);
+        return;
+    }
+    buff[bytes_received] = '\0';
+    printf("Client confirm file name: %s\n", buff);
+
+
     fseek(fptrLog, 0, SEEK_END);
     fileSize = ftell(fptrLog);
     rewind(fptrLog);
@@ -667,4 +689,5 @@ void SendLog()
     }
 
     fclose(fptrLog);
+    free(buffer);
 }

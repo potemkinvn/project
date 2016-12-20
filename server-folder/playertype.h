@@ -14,6 +14,8 @@ typedef struct player {
     int     opponentSockdes;
     int     inviteSockdes;
     char    logFileName[50];
+
+    int     sentGameResult;
 } playerType;
 
 
