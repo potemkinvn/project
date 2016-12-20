@@ -488,18 +488,10 @@ int *BlackMoveList(int epa,int epb)
                             do {
                                 if(ValidSquare(a,b,c,d)!=0) {
                                     if(board[c][d]==0) {
-                                        a=a;
-                                        b=b;
-                                        c=c;
-                                        d=d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                     }
                                     if(board[c][d]>6) {
-                                        a=a;
-                                        b=b;
-                                        c=c;
-                                        d=d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                         break;
@@ -519,10 +511,6 @@ int *BlackMoveList(int epa,int epb)
                 d = b-1;
                 if(ValidSquare(a,b,c,d)!=0) {
                     if(board[c][d]>6||(c==epa&&d==epb&&epturn==2)) {
-                        a = a;
-                        b = b;
-                        c = c;
-                        d = d;
                         allmoves[z]=a*1000+b*100+c*10+d;
                         z++;
                     }
@@ -531,10 +519,6 @@ int *BlackMoveList(int epa,int epb)
                 d = b+1;
                 if(ValidSquare(a,b,c,d)!=0) {
                     if(board[c][d]>6||(c==epa&&d==epb&&epturn==2)) {
-                        a = a;
-                        b = b;
-                        c = c;
-                        d = d;
                         allmoves[z]=a*1000+b*100+c*10+d;
                         z++;
                     }
@@ -544,20 +528,12 @@ int *BlackMoveList(int epa,int epb)
                     d=b;
                     if(ValidSquare(a,b,c,d)!=0) {
                         if(board[c][d]==0) {
-                            a = a;
-                            b = b;
-                            c = c;
-                            d = d;
                             allmoves[z]=a*1000+b*100+c*10+d;
                             z++;
                             c = 4;
                             d = b;
                             if(ValidSquare(a,b,c,d)!=0) {
                                 if(board[c][d]==0) {
-                                    a = a;
-                                    b = b;
-                                    c = c;
-                                    d = d;
                                     allmoves[z]=a*1000+b*100+c*10+d;
                                     z++;
                                 }
@@ -569,10 +545,6 @@ int *BlackMoveList(int epa,int epb)
                     d = b;
                     if(ValidSquare(a,b,c,d)!=0) {
                         if(board[c][d]==0) {
-                            a = a;
-                            b = b;
-                            c = c;
-                            d = d;
                             allmoves[z]=a*1000+b*100+c*10+d;
                             z++;
                         }
@@ -588,18 +560,10 @@ int *BlackMoveList(int epa,int epb)
                             do {
                                 if(ValidSquare(a,b,c,d)!=0) {
                                     if(board[c][d]==0) {
-                                        a = a;
-                                        b = b;
-                                        c = c;
-                                        d = d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                     }
                                     if(board[c][d]>6) {
-                                        a = a;
-                                        b = b;
-                                        c = c;
-                                        d = d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                         break;
@@ -621,10 +585,6 @@ int *BlackMoveList(int epa,int epb)
                         if(abs(e)+abs(f)==3) {
                             if(ValidSquare(a,b,c,d)!=0) {
                                 if(board[c][d]>6||board[c][d]==0) {
-                                    a = a;
-                                    b = b;
-                                    c = c;
-                                    d = d;
                                     allmoves[z]=a*1000+b*100+c*10+d;
                                     z++;
                                 }
@@ -642,18 +602,10 @@ int *BlackMoveList(int epa,int epb)
                             do {
                                 if(ValidSquare(a,b,c,d)!=0) {
                                     if(board[c][d]==0) {
-                                        a = a;
-                                        b = b;
-                                        c = c;
-                                        d = d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                     }
                                     if(board[c][d]>6) {
-                                        a = a;
-                                        b = b;
-                                        c = c;
-                                        d = d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                         break;
@@ -675,10 +627,6 @@ int *BlackMoveList(int epa,int epb)
                             d = b+f;
                             if(ValidSquare(a,b,c,d)!=0) {
                                 if(board[c][d]>6||board[c][d]==0) {
-                                    a = a;
-                                    b = b;
-                                    c = c;
-                                    d = d;
                                     allmoves[z]=a*1000+b*100+c*10+d;
                                     z++;
                                 }
@@ -735,18 +683,10 @@ int *WhiteMoveList(int epa,int epb)
                             do {
                                 if(ValidSquare(a,b,c,d)!=0) {
                                     if(board[c][d]==0) {
-                                        a=a;
-                                        b=b;
-                                        c=c;
-                                        d=d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                     }
                                     if((board[c][d]<7)&&board[c][d]!=0) {
-                                        a=a;
-                                        b=b;
-                                        c=c;
-                                        d=d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                         break;
@@ -766,10 +706,6 @@ int *WhiteMoveList(int epa,int epb)
                 d = b-1;
                 if(ValidSquare(a,b,c,d)!=0) {
                     if(((board[c][d]<7)&&board[c][d]!=0)||(c==epa&&d==epb&&epturn==1)) {
-                        a = a;
-                        b = b;
-                        c = c;
-                        d = d;
                         allmoves[z]=a*1000+b*100+c*10+d;
                         z++;
                     }
@@ -778,10 +714,6 @@ int *WhiteMoveList(int epa,int epb)
                 d = b+1;
                 if(ValidSquare(a,b,c,d)!=0) {
                     if(((board[c][d]<7)&&board[c][d]!=0)||(c==epa&&d==epb&&epturn==1)) {
-                        a = a;
-                        b = b;
-                        c = c;
-                        d = d;
                         allmoves[z]=a*1000+b*100+c*10+d;
                         z++;
                     }
@@ -791,10 +723,6 @@ int *WhiteMoveList(int epa,int epb)
                     d=b;
                     if(ValidSquare(a,b,c,d)!=0) {
                         if(board[c][d]==0) {
-                            a = a;
-                            b = b;
-                            c = c;
-                            d = d;
                             allmoves[z]=a*1000+b*100+c*10+d;
                             z++;
                         }
@@ -803,10 +731,6 @@ int *WhiteMoveList(int epa,int epb)
                     d = b;
                     if(ValidSquare(a,b,c,d)!=0) {
                         if(board[c][d]==0) {
-                            a = a;
-                            b = b;
-                            c = c;
-                            d = d;
                             allmoves[z]=a*1000+b*100+c*10+d;
                             z++;
                         }
@@ -816,10 +740,6 @@ int *WhiteMoveList(int epa,int epb)
                     d = b;
                     if(ValidSquare(a,b,c,d)!=0) {
                         if(board[c][d]==0) {
-                            a = a;
-                            b = b;
-                            c = c;
-                            d = d;
                             allmoves[z]=a*1000+b*100+c*10+d;
                             z++;
                         }
@@ -835,18 +755,10 @@ int *WhiteMoveList(int epa,int epb)
                             do {
                                 if(ValidSquare(a,b,c,d)!=0) {
                                     if(board[c][d]==0) {
-                                        a = a;
-                                        b = b;
-                                        c = c;
-                                        d = d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                     }
                                     if(board[c][d]<7&&board[c][d]!=0) {
-                                        a = a;
-                                        b = b;
-                                        c = c;
-                                        d = d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                         break;
@@ -868,10 +780,6 @@ int *WhiteMoveList(int epa,int epb)
                         if(abs(e)+abs(f)==3) {
                             if(ValidSquare(a,b,c,d)!=0) {
                                 if(board[c][d]<7) {
-                                    a = a;
-                                    b = b;
-                                    c = c;
-                                    d = d;
                                     allmoves[z]=a*1000+b*100+c*10+d;
                                     z++;
                                 }
@@ -889,18 +797,10 @@ int *WhiteMoveList(int epa,int epb)
                             do {
                                 if(ValidSquare(a,b,c,d)!=0) {
                                     if(board[c][d]==0) {
-                                        a = a;
-                                        b = b;
-                                        c = c;
-                                        d = d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                     }
                                     if(board[c][d]<7&&board[c][d]!=0) {
-                                        a = a;
-                                        b = b;
-                                        c = c;
-                                        d = d;
                                         allmoves[z]=a*1000+b*100+c*10+d;
                                         z++;
                                         break;
@@ -922,10 +822,6 @@ int *WhiteMoveList(int epa,int epb)
                             d = b+f;
                             if(ValidSquare(a,b,c,d)!=0) {
                                 if(board[c][d]<7) {
-                                    a = a;
-                                    b = b;
-                                    c = c;
-                                    d = d;
                                     allmoves[z]=a*1000+b*100+c*10+d;
                                     z++;
                                 }
@@ -1400,13 +1296,14 @@ int PlayGame(int side)
             epturn = 2;
             updateList(whitelist,blacklist);
             printf("\e[2J\e[H");
+            printboard();
             if(BlackMate(blacklist)==1) {
                 printf("White has done a mate!!\n");
                 gameresult = 1;
                 printf("Result: %d\n",gameresult);
                 break;
             }
-            printboard();
+
             break;
 
         /// black turn

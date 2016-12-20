@@ -97,7 +97,7 @@ int main()
             break;
         }
         }
-    } while(choice>=1&&choice<=5);
+    } while(choice>=1&&choice<=3);
 
     close(client_sock);
     return 0;

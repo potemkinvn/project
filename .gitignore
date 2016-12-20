@@ -1,2 +1,5 @@
-server-foler/server.layout
-client-foler/client.layout
+server-folder/server.layout
+
+client-folder/client.layout
+client-folder/obj/Debug/clientfunction.o
+client-folder/bin/Debug/client
