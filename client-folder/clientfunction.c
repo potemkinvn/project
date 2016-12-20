@@ -1179,7 +1179,6 @@ int WhiteMate(int *whitelist)
         c = val/10 - a*100 - b*10;
         d = val%10;
         if(WhiteFaultCheck(a,b,c,d)!=0) {
-            printf("\nLegal move is: %d%d%d%d\n",a,b,c,d);
             result = 0;
             break;
         }
@@ -1200,7 +1199,6 @@ int BlackMate(int *blacklist)
         c = val/10 - a*100 - b*10;
         d = val%10;
         if(BlackFaultCheck(a,b,c,d)!=0) {
-            printf("\nLegal move is: %d%d%d%d\n",a,b,c,d);
             result = 0;
             break;
         }
@@ -1257,7 +1255,6 @@ int PlayGame(int side)
         switch(turn) {
         /// white turn
         case 0:
-            printf("game result: %d\n",gameresult);
             if(gameresult!=0) break;
             check = 0;
             for(a=0; a<8; a++) {
@@ -1328,6 +1325,7 @@ int PlayGame(int side)
                 //       setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 
                 /// wait for move from server for 30s
+                printf("\nWaiting for opponent's move\n");
                 bytes_received = recv(client_sock,buff,1024,0);
                 if(bytes_received <= 0) {
                     /// send to server I win
@@ -1350,7 +1348,6 @@ int PlayGame(int side)
                 }
 
                 strcpy(command,ms.message);
-                printf("\nNext Move is: %s\n",command);
                 a = command[0]-'0';
                 b = command[1]-'0';
                 c = command[2]-'0';
@@ -1414,7 +1411,6 @@ int PlayGame(int side)
 
         /// black turn
         case 1:
-            printf("game result: %d\n",gameresult);
             if(gameresult!=0) break;
             check = 0;
             for(a=0; a<8; a++) {
@@ -1481,6 +1477,7 @@ int PlayGame(int side)
                 //       setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
 
                 /// wait for move from server for 30s
+                printf("\nWaiting for opponent's move\n");
                 bytes_received = recv(client_sock,buff,1024,0);
                 if(bytes_received <= 0) {
                     /// send to server I win
@@ -1527,7 +1524,7 @@ int PlayGame(int side)
                 printboard();
                 break;
             }
-            if(board[a][b]==brook || board[a][b]==bking) whitecastled =1;
+            if(board[a][b]==brook || board[a][b]==bking) blackcastled =1;
             if(board[a][b]==bpawn&&c==enpass_a&&d==enpass_b) {
                 Move(a,b,c,d);
                 board[enpass_a+1][enpass_b]=blank;
@@ -1545,10 +1542,9 @@ int PlayGame(int side)
                 enpass_b = -1;
             }
             Move(a,b,c,d);
-            updateList(whitelist,blacklist);
-
             turn--;
             epturn = 1;
+            updateList(whitelist,blacklist);
             printf("\e[2J\e[H");
             printboard();
             // printf("whitemate: %d?\n",WhiteMate(whitelist));
@@ -1559,8 +1555,6 @@ int PlayGame(int side)
                 break;
             }
 
-
-            printboard();
             break;
         }
     }

@@ -77,10 +77,10 @@
 1482224221 source:/media/sf/d/Setup/Google Drive/Coding/Network programming/Midterm/git/client-folder/main.c
 	"clientfunction.h"
 
-1482122165 source:/home/Flick/project/client-folder/main.c
+1482226578 source:/home/Flick/project/client-folder/main.c
 	"clientfunction.h"
 
-1481982852 /home/Flick/project/client-folder/clientfunction.h
+1482226578 /home/Flick/project/client-folder/clientfunction.h
 	<stdio.h>
 	<stdlib.h>
 	<netinet/in.h>
@@ -102,6 +102,6 @@
 
 1481982852 /home/Flick/project/client-folder/piece.h
 
-1482121888 source:/home/Flick/project/client-folder/clientfunction.c
+1482226861 source:/home/Flick/project/client-folder/clientfunction.c
 	"clientfunction.h"
 
