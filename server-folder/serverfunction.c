@@ -145,6 +145,19 @@ int GetPlayerIndexOnSockdes(int sockdes, playerType player[30])
     return -9999;
 }
 
+void SendOpponentQuit(int opponentIndex)
+{
+    ms.command = 303;
+    sprintf(buff,"%d",ms.command);
+    bytes_sent = send(player[opponentIndex].sockdes,buff,sizeof(buff),0);
+    if (bytes_sent <= 0) {
+        printf("Error! Can not sent data to client!\n");
+        close(player[opponentIndex].sockdes);
+        ResetPlayer(&player[opponentIndex]);
+        return;
+    }
+}
+
 /** \brief Test username function
  *
  * \param
@@ -531,9 +544,13 @@ void ProcessGameResult()
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
 
-    /// check if opponent send game result before this player -> skip update log
+    /// check if opponent haven't send game result before this player or opp quited -> update log
     int playerBIndex = GetPlayerIndexOnSockdes(player[i].opponentSockdes, player);
-    if(player[playerBIndex].sentGameResult == 0) {
+    int isUpdateLog = 0;
+    if(playerBIndex == -9999) isUpdateLog = 1;
+    else if(player[playerBIndex].sentGameResult == 0) isUpdateLog = 1;
+
+    if(isUpdateLog){
         /// Update time end in log file
         FILE *fptrLog;
         sprintf(timeend,"%d/%d/%d %d:%d:%d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);

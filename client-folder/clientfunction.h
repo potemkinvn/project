@@ -92,5 +92,9 @@ int BlackFaultCheck(int a,int b,int c,int d);
 int WhiteMate(int *whitelist);
 int BlackMate(int *blacklist);
 int PlayGame(int side);
+void ParseGameResult(int resultCode, char resultText[]);
+void SendResult(int resultCode);
+int ReceiveLog();
+void FindAndPlayGame();
 
 #endif // CLIENTFUNCTION_H_INCLUDED

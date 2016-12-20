@@ -75,6 +75,8 @@ int GetPlayerIndexOnUsername(char username[], playerType player[30]);
  */
 int GetPlayerIndexOnSockdes(int sockdes, playerType player[30]);
 
+void SendOpponentQuit(int opponentIndex);
+
 /** \brief Test username function
  *
  * \param

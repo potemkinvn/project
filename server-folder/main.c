@@ -154,6 +154,13 @@ int main()
                 bytes_received = recv(sd,buff,1024,0);
                 if (bytes_received <= 0) {
                     printf("Error! Can not receive data from socket %d \n", sd);
+
+                    /// check if this guy is playing, send info he quit to his opponent
+                    if(player[i].isAvailable == 0){
+                        int opponentIndex = GetPlayerIndexOnSockdes(player[i].opponentSockdes, player);
+                        SendOpponentQuit(opponentIndex);
+                    }
+
                     close(sd);
                     ResetPlayer(&player[i]);
                     break;

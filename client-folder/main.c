@@ -75,26 +75,12 @@ int main()
                 printf("Game on!!!");
                 /// go to game phase
                 int side = 1;
-                int result = PlayGame(side);
-                switch(result) {
-                case 0:
-                    printf("\nDraw game!!\n");
-                    break;
-                case 1:
-                    printf("\nWhite won by mate!!\n");
-                    break;
-                case 2:
-                    printf("\nBlack won by mate!!\n");
-                    break;
-                case 3:
-                    printf("\nWhite won by fault - Black has committed 3 technical fault!!\n");
-                    break;
-                case 4:
-                    printf("\nBlack won by fault - White has committed 3 technical fault!!\n");
-                    break;
-                }
+                int resultCode = PlayGame(side);
+                char resultText[50];
+                ParseGameResult(resultCode, resultText);
+                printf("%s", resultText);
 
-                SendResult(result);
+                SendResult(resultCode);
                 ReceiveLog();
 
                 char c;

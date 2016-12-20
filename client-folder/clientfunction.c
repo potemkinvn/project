@@ -1216,11 +1216,18 @@ int updateList(int *list1,int *list2)
     list2 = BlackMoveList(enpass_a,enpass_b);
     return 0;
 }
+
+///0 - draw;
+///1 - white won by mate;
+///2 - black won by mate;
+///3 - black won by fault;
+///4 - white won by fault
+///5 - black won - white quited
+///6 - white won - black quited
 int PlayGame(int side)
 {
     setup();
     printboard();
-    int i;
     int tmp;
     int blackfault=0;
     int whitefault=0;
@@ -1248,8 +1255,9 @@ int PlayGame(int side)
         //     }
         printf("\n");
         switch(turn) {
+        /// white turn
         case 0:
-            printf("\game result: %d\n",gameresult);
+            printf("game result: %d\n",gameresult);
             if(gameresult!=0) break;
             check = 0;
             for(a=0; a<8; a++) {
@@ -1265,6 +1273,7 @@ int PlayGame(int side)
             }
 
             /// make move and send to server: 300 ~ [cordinate]
+            /// white turn - I am white
             if(turn == side) {
                 printf("\nIt's White's turn!! input next move: ");
                 scanf("%s",command);
@@ -1310,6 +1319,7 @@ int PlayGame(int side)
             }
 
             /// receive move from server and extract into a,b,c,d: 301 ~ [cordinate]
+            /// white turn - I am black
             if(turn!=side) {
                 /// set timeout 30 seconds
                 //        struct timeval tv;
@@ -1332,6 +1342,13 @@ int PlayGame(int side)
                 }
 
                 ms = ParseMessage(buff);
+
+                if(ms.command == 303) {
+                    /// my opponent has quited, black won cause white quited
+                    gameresult = 5;
+                    break;
+                }
+
                 strcpy(command,ms.message);
                 printf("\nNext Move is: %s\n",command);
                 a = command[0]-'0';
@@ -1394,8 +1411,10 @@ int PlayGame(int side)
             }
             printboard();
             break;
+
+        /// black turn
         case 1:
-            printf("\game result: %d\n",gameresult);
+            printf("game result: %d\n",gameresult);
             if(gameresult!=0) break;
             check = 0;
             for(a=0; a<8; a++) {
@@ -1409,7 +1428,8 @@ int PlayGame(int side)
                     }
                 }
             }
-//reserved code               if(turn==side){
+
+            /// black turn - I am black
             if(turn == side) {
                 printf("\nIt's Black's turn!! input next move: ");
                 scanf("%s",command);
@@ -1451,11 +1471,8 @@ int PlayGame(int side)
                     exit(-1);
                 }
             }
-//   reserve code       }
-//                if(turn!=side)
-//               {
-//                   receive move form server and extract into a,b,c,d
-//               }
+
+            /// black turn - I am white
             if(turn != side) {
                 /// set timeout 30 seconds
                 //        struct timeval tv;
@@ -1477,6 +1494,12 @@ int PlayGame(int side)
                 }
 
                 ms = ParseMessage(buff);
+                if(ms.command == 303) {
+                    /// my opponent has quited, white won cause black quited
+                    gameresult = 6;
+                    break;
+                }
+
                 strcpy(command,ms.message);
                 printf("\nNext Move is: %s\n",command);
                 a = command[0]-'0';
@@ -1544,28 +1567,13 @@ int PlayGame(int side)
     return gameresult;
 }
 
-void SendResult(int result)
+void SendResult(int resultCode)
 {
     ms.command = 302;
-    switch(result) {
-    case 0:
-        strcpy(ms.message, "\nDraw game!!\n");
-        break;
-    case 1:
-        strcpy(ms.message, "\nWhite won by mate!!\n");
-        break;
-    case 2:
-        strcpy(ms.message, "\nBlack won by mate!!\n");
-        break;
-    case 3:
-        strcpy(ms.message, "\nWhite won by fault - Black has committed 3 technical fault!!\n");
-        break;
-    case 4:
-        strcpy(ms.message, "\nBlack won by fault - White has committed 3 technical fault!!\n");
-        break;
-    }
+    char resultText[50];
+    ParseGameResult(resultCode, resultText);
 
-    sprintf(buff, "%d ~ %s", ms.command, ms.message);
+    sprintf(buff, "%d ~ %s", ms.command, resultText);
     bytes_sent = send(client_sock, buff, sizeof(buff), 0);
     if(bytes_sent <= 0) {
         printf("\nError! Cannot send data to sever!\n");
@@ -1574,7 +1582,7 @@ void SendResult(int result)
     }
 }
 
-void ReceiveLog()
+int ReceiveLog()
 {
     char logFileName[50];
 
@@ -1648,6 +1656,8 @@ void ReceiveLog()
 
     free(buffer);
     fclose(output);
+
+    return 0;
 }
 
 void FindAndPlayGame()
@@ -1656,26 +1666,10 @@ void FindAndPlayGame()
         printf("Game on!!!");
         /// go to game phase
         int side = 0;
-        int result = PlayGame(side);
-        switch(result) {
-        case 0:
-            printf("\nDraw game!!\n");
-            break;
-        case 1:
-            printf("\nWhite won by mate!!\n");
-            break;
-        case 2:
-            printf("\nBlack won by mate!!\n");
-            break;
-        case 3:
-            printf("\nWhite won by fault - Black has committed 3 technical fault!!\n");
-            break;
-        case 4:
-            printf("\nBlack won by fault - White has committed 3 technical fault!!\n");
-            break;
-        }
-
-        SendResult(result);
+        int resultCode = PlayGame(side);
+        char resultText[50];
+        ParseGameResult(resultCode, resultText);
+        SendResult(resultCode);
         ReceiveLog();
 
         char c;
@@ -1684,5 +1678,32 @@ void FindAndPlayGame()
         scanf("%c", &c);
         if(c=='n')
             break;
+    }
+}
+
+void ParseGameResult(int resultCode, char resultText[])
+{
+    switch(resultCode) {
+    case 0:
+        strcpy(resultText, "\nDraw game!!\n");
+        break;
+    case 1:
+        strcpy(resultText, "\nWhite won by mate!!\n");
+        break;
+    case 2:
+        strcpy(resultText, "\nBlack won by mate!!\n");
+        break;
+    case 3:
+        strcpy(resultText, "\nWhite won by fault - Black has committed 3 technical fault!!\n");
+        break;
+    case 4:
+        strcpy(resultText, "\nBlack won by fault - White has committed 3 technical fault!!\n");
+        break;
+    case 5:
+        strcpy(resultText, "\nBlack won - White has quited!!\n");
+        break;
+    case 6:
+        strcpy(resultText, "\nWhite won - Black has quited!!\n");
+        break;
     }
 }
