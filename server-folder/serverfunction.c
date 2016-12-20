@@ -156,6 +156,7 @@ void SendOpponentQuit(int opponentIndex)
         ResetPlayer(&player[opponentIndex]);
         return;
     }
+    printf("Sent message to client on sockdes %d: %s\n", player[opponentIndex].sockdes, buff);
 }
 
 /** \brief Test username function
@@ -320,10 +321,21 @@ void ReceiveInvitationRequest()
             ResetPlayer(&player[i]);
         }
         player[i].inviteSockdes = 0; // playerA end invitation process
-    } else if(player[playerBIndex].sockdes == player[i].sockdes) {
+    } else if(player[playerBIndex].sockdes == player[i].sockdes || !player[playerBIndex].isLogged) {
         /// clientA send request to clientA
         ms.command = 209;
         sprintf(buff,"%d ~ User not exists or you send invite to yourself.",ms.command);
+        bytes_sent = send(sd,buff,sizeof(buff),0);
+        if (bytes_sent <= 0) {
+            printf("Error! Can not sent data to client!\n");
+            close(sd);
+            ResetPlayer(&player[i]);
+        }
+        player[i].inviteSockdes = 0; // playerA end invitation process
+    } else if(player[playerBIndex].isAvailable == 0) {
+        /// clientB not available
+        ms.command = 209;
+        sprintf(buff,"%d ~ User not available at the moment.",ms.command);
         bytes_sent = send(sd,buff,sizeof(buff),0);
         if (bytes_sent <= 0) {
             printf("Error! Can not sent data to client!\n");

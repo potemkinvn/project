@@ -1615,7 +1615,7 @@ int ReceiveLog()
     sprintf(tmp,"%d",file_size);
     bytes_sent = send(client_sock, tmp, sizeof(tmp), 0);
     if (bytes_sent < 0) {
-        printf("Error! Can not sent data to client!\n");
+        printf("Error! Can not send confirm file size to server!\n");
         close(client_sock);
         return 1;
     }
@@ -1628,7 +1628,7 @@ int ReceiveLog()
     while(remain > 0) {
         ret = recv(client_sock, buff, sizeof(buff), 0);
         if(ret == -1) {
-            printf("Error! Can not receive data from client!\n");
+            printf("Error! Can not receive data from server!\n");
             close(client_sock);
             exit(-1);
         }
