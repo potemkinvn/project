@@ -137,11 +137,11 @@ int GetListLength(node *root)
     return count;
 }
 
-void PrintList(node **root)
-{
-    node* tmp = *root;
-    while(tmp != NULL) {
-        printf("%s %s\n", tmp->element.name, tmp->element.pass);
-        tmp = tmp->pNext;
-    }
-}
+//void PrintList(node **root)
+//{
+//    node* tmp = *root;
+//    while(tmp != NULL) {
+//        printf("%s %s\n", tmp->element.name, tmp->element.pass);
+//        tmp = tmp->pNext;
+//    }
+//}

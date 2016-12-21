@@ -1,0 +1,3 @@
+Compile using:
+
+gcc -o server server.c serverfunction.c linkedlist.c
