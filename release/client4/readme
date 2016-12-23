@@ -1,0 +1,3 @@
+Compile using:
+
+gcc -o client client.c clientfunction.c

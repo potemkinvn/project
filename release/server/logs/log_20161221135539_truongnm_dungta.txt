@@ -1,0 +1,24 @@
+==================Chess multi-player log==================
+
+Time start: 2016/12/21 13:55:39
+(Inviter - Black) Player 'truongnm' IP: 127.0.0.1
+( Accept - White) Player 'dungta' IP: 127.0.0.1
+
+Player 'dungta' move: 1535
+Player 'truongnm' move: 6444
+Player 'dungta' move: 3544
+Player 'truongnm' move: 7152
+Player 'dungta' move: 4454
+Player 'truongnm' move: 5233
+Player 'dungta' move: 5464
+Player 'truongnm' move: 3312
+Player 'dungta' move: 0312
+Player 'truongnm' move: 7464
+Player 'dungta' move: 1636
+Player 'truongnm' move: 6474
+Player 'dungta' move: 1030
+Player 'truongnm' move: 7337
+
+White won by fault - Black has committed 3 technical fault!!
+
+Time end: 2016/12/21 14:0:7

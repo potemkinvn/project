@@ -1,0 +1,11 @@
+==================Chess multi-player log==================
+
+Time start: 2016/12/21 12:34:40
+(Inviter - Black) Player '1' IP: 127.0.0.1
+( Accept - White) Player 'dungta' IP: 127.0.0.1
+
+Player 'dungta' move: quit
+
+Black won - White has surrendered!!
+
+Time end: 2016/12/21 12:34:45

@@ -449,7 +449,7 @@ int CheckBlack(int *whitelist)
         //      if(result==1) break;
         for(b=0; b<8; b++) {
             //       if(result==1) break;
-            for(i=0; i<218; i++) {
+            for(i=0; i<304; i++) {
                 num = a*1000+b*100+x*10+y;
                 if(num == *(whitelist+i)) {
                     result = 1;
@@ -464,7 +464,7 @@ int CheckBlack(int *whitelist)
 int *BlackMoveList(int epa,int epb)
 {
     int i;
-    static int allmoves[218];
+    static int allmoves[304];
     int a=0;
     int b=0;
     int c=0;
@@ -472,7 +472,7 @@ int *BlackMoveList(int epa,int epb)
     int e=0;
     int f=0;
     int z=0;
-    for(i=0; i<218; i++) {
+    for(i=0; i<304; i++) {
         allmoves[i]=0;
     }
 //   printf("\nepa: %d, epb: %d\n",epa,epb);
@@ -659,7 +659,7 @@ int *BlackMoveList(int epa,int epb)
 int *WhiteMoveList(int epa,int epb)
 {
     int i;
-    static int allmoves[218];
+    static int allmoves[304];
     int a=0;
     int b=0;
     int c=0;
@@ -667,7 +667,7 @@ int *WhiteMoveList(int epa,int epb)
     int e=0;
     int f=0;
     int z=0;
-    for(i=0; i<218; i++) {
+    for(i=0; i<304; i++) {
         allmoves[i]=0;
     }
 //  printf("\nepa: %d, epb: %d\n",epa,epb);
@@ -869,7 +869,7 @@ int CheckWhite(int *blacklist)
     }
     for(a=0; a<8; a++) {
         for(b=0; b<8; b++) {
-            for(i=0; i<218; i++) {
+            for(i=0; i<304; i++) {
                 num = a*1000+b*100+x*10+y;
                 if(num == *(blacklist+i)) {
 //                   printf("check move is: list[%d] %d \n",i,blacklist[i]);
@@ -897,7 +897,7 @@ int WhiteMove(char *cmd,int turn,int castlingcheck)
         if(queensideok==0) break;
         for(y=0; y<8; y++) {
             if(queensideok==0) break;
-            for(i=0; i<218; i++) {
+            for(i=0; i<304; i++) {
                 int val1=x*1000 + y*100 + 1;
                 int val2=x*1000 + y*100 + 2;
                 int val3=x*1000 + y*100 + 3;
@@ -912,7 +912,7 @@ int WhiteMove(char *cmd,int turn,int castlingcheck)
         if(kingsideok==0) break;
         for(y=0; y<8; y++) {
             if(kingsideok==0) break;
-            for(i=0; i<218; i++) {
+            for(i=0; i<304; i++) {
                 int val1=x*1000 + y*100 + 5;
                 int val2=x*1000 + y*100 + 6;
                 if(val1==blacklist[i]||val2==blacklist[i]) {
@@ -943,7 +943,7 @@ int WhiteMove(char *cmd,int turn,int castlingcheck)
     if(a==c&&b==d&&castling==0) return 0;
     if(ValidSquare(a,b,c,d) == 0) return 0;
     if(board[a][b]<7&&castling==0) return 0;
-    for(i=0; i<218; i++) {
+    for(i=0; i<304; i++) {
         if(num==*(list+i)) {
             result = 1;
             break;
@@ -991,7 +991,7 @@ int BlackMove(char *cmd,int turn,int castlingcheck)
         if(queensideok==0) break;
         for(y=0; y<8; y++) {
             if(queensideok==0) break;
-            for(i=0; i<218; i++) {
+            for(i=0; i<304; i++) {
                 int val1=x*1000 + y*100 + 71;
                 int val2=x*1000 + y*100 + 72;
                 int val3=x*1000 + y*100 + 73;
@@ -1007,7 +1007,7 @@ int BlackMove(char *cmd,int turn,int castlingcheck)
         if(kingsideok==0) break;
         for(y=0; y<8; y++) {
             if(kingsideok==0) break;
-            for(i=0; i<218; i++) {
+            for(i=0; i<304; i++) {
                 int val1=x*1000 + y*100 + 75;
                 int val2=x*1000 + y*100 + 76;
                 //  printf("i:%d | val3: %d | %d \n",i,val3,blacklist[i]);
@@ -1039,7 +1039,7 @@ int BlackMove(char *cmd,int turn,int castlingcheck)
     if(ValidSquare(a,b,c,d) == 0) return 0;
     //  printf("2nd: %d\n",result);
     if(board[a][b]>6&&castling==0) return 0;
-    for(i=0; i<218; i++) {
+    for(i=0; i<304; i++) {
         if(num==*(list+i)) {
             result = 1;
             break;
@@ -1068,7 +1068,7 @@ int WhiteMate(int *whitelist)
     int i;
     int val;
     int a,b,c,d;
-    for(i=0; i<218; i++) {
+    for(i=0; i<304; i++) {
         val = *(whitelist+i);
         a = val/1000;
         b = val/100 - a*10;
@@ -1088,7 +1088,7 @@ int BlackMate(int *blacklist)
     int i;
     int val;
     int a,b,c,d;
-    for(i=0; i<218; i++) {
+    for(i=0; i<304; i++) {
         val = *(blacklist+i);
         a = val/1000;
         b = val/100 - a*10;
@@ -1136,14 +1136,14 @@ int PlayGame(int side)
     int *blacklist = BlackMoveList(enpass_a,enpass_b);
     int turn = 0; //0 is white,1 is black
     while(gameresult == 0) {
-        //   for(i=0;i<218;i++)
+        //   for(i=0;i<304;i++)
         //      {
         //          if(*(whitelist+i)==0) break;
 //           if(*(whitelist+i)==1737) printf("abcxyz");
 //           if(*(whitelist+i)!=0) printf("%d|",*(whitelist+i));
         //      }
         //      printf("\n");
-        //      for(i=0;i<218;i++)
+        //      for(i=0;i<304;i++)
         //     {
         //         if(*(blacklist+i)!=0) printf("%d|",*(blacklist+i));
         //     }
